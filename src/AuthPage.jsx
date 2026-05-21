@@ -3,6 +3,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   updateProfile,
 } from "firebase/auth";
 import { auth, googleProvider } from "./firebase";
@@ -46,16 +47,58 @@ export default function AuthPage({ lang = "en" }) {
 
   const ui = t[lang] || t.en;
 
+  function getAuthErrorMessage(err) {
+    const messages = {
+      "auth/email-already-in-use":
+        lang === "ka"
+          ? "ეს ელ-ფოსტა უკვე გამოყენებულია."
+          : "Email already in use.",
+      "auth/invalid-email":
+        lang === "ka" ? "არასწორი ელ-ფოსტა." : "Invalid email.",
+      "auth/weak-password":
+        lang === "ka"
+          ? "პაროლი მინიმუმ 6 სიმბოლო უნდა იყოს."
+          : "Password must be at least 6 characters.",
+      "auth/invalid-credential":
+        lang === "ka"
+          ? "არასწორი ელ-ფოსტა ან პაროლი."
+          : "Invalid email or password.",
+      "auth/popup-blocked":
+        lang === "ka"
+          ? "Popup დაიბლოკა. გადამისამართებით გაგრძელდება."
+          : "Popup was blocked. Redirecting instead.",
+      "auth/popup-closed-by-user":
+        lang === "ka" ? "Google ფანჯარა დაიხურა." : "Google popup was closed.",
+      "auth/unauthorized-domain":
+        lang === "ka"
+          ? "ეს დომენი Firebase-ში არ არის დამატებული."
+          : "This domain is not authorized in Firebase.",
+      "auth/operation-not-allowed":
+        lang === "ka"
+          ? "Firebase-ში ეს შესვლის მეთოდი ჩართული არ არის."
+          : "This sign-in method is not enabled in Firebase.",
+    };
+
+    return messages[err.code] || err.message;
+  }
+
   async function signInGoogle() {
     setError("");
-    setLoading(true);
 
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      if (err.code === "auth/popup-blocked") {
+        try {
+          await signInWithRedirect(auth, googleProvider);
+          return;
+        } catch (redirectErr) {
+          setError(getAuthErrorMessage(redirectErr));
+          return;
+        }
+      }
+
+      setError(getAuthErrorMessage(err));
     }
   }
 
@@ -71,29 +114,15 @@ export default function AuthPage({ lang = "en" }) {
           email,
           password,
         );
-        await updateProfile(cred.user, { displayName: name.trim() || email });
+
+        await updateProfile(cred.user, {
+          displayName: name.trim() || email,
+        });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
     } catch (err) {
-      const messages = {
-        "auth/email-already-in-use":
-          lang === "ka"
-            ? "ეს ელ-ფოსტა უკვე გამოყენებულია."
-            : "Email already in use.",
-        "auth/invalid-email":
-          lang === "ka" ? "არასწორი ელ-ფოსტა." : "Invalid email.",
-        "auth/weak-password":
-          lang === "ka"
-            ? "პაროლი მინიმუმ 6 სიმბოლო უნდა იყოს."
-            : "Password must be at least 6 characters.",
-        "auth/invalid-credential":
-          lang === "ka"
-            ? "არასწორი ელ-ფოსტა ან პაროლი."
-            : "Invalid email or password.",
-      };
-
-      setError(messages[err.code] || err.message);
+      setError(getAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -106,12 +135,15 @@ export default function AuthPage({ lang = "en" }) {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-300 text-3xl font-black text-slate-950">
             ♠
           </div>
+
           <h1 className="text-4xl font-black">{ui.title}</h1>
+
           <p className="mt-2 text-sm text-slate-400">{ui.subtitle}</p>
         </div>
 
         <div className="mb-5 grid grid-cols-2 gap-2 rounded-2xl bg-slate-950 p-1">
           <button
+            type="button"
             onClick={() => setMode("register")}
             className={
               mode === "register"
@@ -121,7 +153,9 @@ export default function AuthPage({ lang = "en" }) {
           >
             {ui.register}
           </button>
+
           <button
+            type="button"
             onClick={() => setMode("login")}
             className={
               mode === "login"
@@ -168,8 +202,9 @@ export default function AuthPage({ lang = "en" }) {
           />
 
           <button
+            type="submit"
             disabled={loading}
-            className="min-h-[54px] w-full rounded-2xl bg-amber-300 px-5 font-black text-slate-950 disabled:opacity-60"
+            className="min-h-[54px] w-full rounded-2xl bg-amber-300 px-5 font-black text-slate-950 hover:bg-amber-200 disabled:opacity-60"
           >
             {loading
               ? "..."
@@ -186,9 +221,9 @@ export default function AuthPage({ lang = "en" }) {
         </div>
 
         <button
+          type="button"
           onClick={signInGoogle}
-          disabled={loading}
-          className="min-h-[54px] w-full rounded-2xl border border-white/10 bg-slate-950 px-5 font-black text-slate-100 hover:bg-white/5 disabled:opacity-60"
+          className="min-h-[54px] w-full rounded-2xl border border-white/10 bg-slate-950 px-5 font-black text-slate-100 hover:bg-white/5"
         >
           {ui.google}
         </button>
