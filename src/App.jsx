@@ -28,6 +28,7 @@ import {
 } from "./game";
 
 const LOCAL_KEY = "king-online-modern-user";
+const AUTO_NEXT_TRICK_DELAY_MS = 300;
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -204,6 +205,7 @@ export default function App() {
   const deckGame = room?.deckGame || emptyDeckGame;
   const history = room?.history || [];
   const currentTurnId = deckGame.currentTurnId || "";
+  const lastWinnerId = deckGame.lastWinnerId || "";
   const myHand = deckGame.hands?.[seatId] || [];
   const tableCards = deckGame.tableCards || [];
   const roundOver = deckGame.roundOver || false;
@@ -241,6 +243,35 @@ export default function App() {
       updatedAt: serverTimestamp(),
     });
   }
+
+  useEffect(() => {
+    if (gameStatus !== "playing") return;
+    if (roundOver) return;
+    if (!lastWinnerId) return;
+    if (tableCards.length !== players.length) return;
+
+    const timer = window.setTimeout(() => {
+      patchRoom({
+        deckGame: {
+          ...deckGame,
+          tableCards: [],
+          trickNumber: (deckGame.trickNumber || 1) + 1,
+          currentTurnId: lastWinnerId,
+          lastWinnerId: "",
+          error: "",
+        },
+      }).catch((error) => setPageError(error.message));
+    }, AUTO_NEXT_TRICK_DELAY_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    deckGame,
+    gameStatus,
+    lastWinnerId,
+    players.length,
+    roundOver,
+    tableCards.length,
+  ]);
 
   function addExtraCardsToChooser(baseDeck = deckGame) {
     if ((baseDeck.pendingExtraCards || []).length !== 2) return baseDeck;
@@ -704,10 +735,11 @@ export default function App() {
       deckGame: {
         ...deckGame,
         hands: nextHands,
-        tableCards: isRoundOver ? nextTableCards : [],
+        tableCards: nextTableCards,
         currentTurnId: winnerId,
         taken: nextTaken,
-        trickNumber: isRoundOver ? currentTrickNumber : currentTrickNumber + 1,
+        trickNumber: currentTrickNumber,
+        lastWinnerId: isRoundOver ? "" : winnerId,
         roundOver: isRoundOver,
         error: "",
       },
