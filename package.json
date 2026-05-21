@@ -11,7 +11,7 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",
     "@vitejs/plugin-react": "latest",
-    "firebase": "latest",
+    "firebase": "^12.13.0",
     "react": "latest",
     "react-dom": "latest",
     "tailwindcss": "^4.3.0",
