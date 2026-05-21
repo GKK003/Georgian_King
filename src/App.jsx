@@ -876,7 +876,7 @@ export default function App() {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_center,#15414b_0%,#071923_48%,#020617_100%)] text-slate-100">
-      <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-3 py-3 sm:px-5">
+      <div className="mobile-landscape-scale mx-auto flex min-h-screen max-w-7xl flex-col px-3 py-3 sm:px-5">
         <header className="z-20 mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-slate-950/70 px-3 py-2 backdrop-blur">
           <div>
             <p className="text-xs font-bold text-amber-300">
