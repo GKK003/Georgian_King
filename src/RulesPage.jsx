@@ -90,7 +90,7 @@ const RULES = {
       },
     ],
   },
-  ka: {
+  ge: {
     title: "წესები",
     subtitle: "კინგის თამაშის წესები",
     back: "უკან",

@@ -99,7 +99,7 @@ function clearLocal() {
 function suitName(suit, lang) {
   const found = SUITS.find((item) => item.id === suit);
   if (!found) return "";
-  return lang === "ka" ? found.nameKa : found.nameEn;
+  return lang === "ge" ? found.namege : found.nameEn;
 }
 
 export default function App() {
@@ -157,7 +157,7 @@ export default function App() {
           setSeatId("");
           setRoom(null);
           setPageError(
-            createLang === "ka"
+            createLang === "ge"
               ? "ეს ვერსია მხოლოდ 3 მოთამაშისთვის არის."
               : "This version only supports 3-player rooms.",
           );
@@ -354,7 +354,7 @@ export default function App() {
 
       if (!isSupportedPlayerCount(data.playerCount || 3)) {
         setPageError(
-          lang === "ka"
+          lang === "ge"
             ? "ეს ვერსია მხოლოდ 3 მოთამაშისთვის არის."
             : "This version only supports 3-player rooms.",
         );
@@ -519,7 +519,7 @@ export default function App() {
 
     if (currentContract.id === "tricks-positive" && !deckGame.trumpSuit) {
       setPageError(
-        lang === "ka" ? "აირჩიე მთავარი ფერი." : "Choose main suit.",
+        lang === "ge" ? "აირჩიე მთავარი ფერი." : "Choose main suit.",
       );
       return;
     }
@@ -568,7 +568,7 @@ export default function App() {
         deckGame: {
           ...deckGame,
           error:
-            lang === "ka"
+            lang === "ge"
               ? "ამ რეჟიმში ამ კარტის ამოღება არ შეიძლება."
               : "You cannot remove this card in this mode.",
         },
@@ -609,7 +609,7 @@ export default function App() {
         deckGame: {
           ...deckGame,
           error:
-            lang === "ka"
+            lang === "ge"
               ? "2 კარტის ამოღებამდე ამრჩევს 12 კარტი უნდა ჰქონდეს."
               : "Chooser must have 12 cards before removing 2.",
         },
@@ -635,7 +635,7 @@ export default function App() {
         deckGame: {
           ...deckGame,
           error:
-            lang === "ka"
+            lang === "ge"
               ? "ამ რეჟიმში ქულიანი კარტის ამოღება არ შეიძლება."
               : "You cannot remove scoring cards in this mode.",
         },
@@ -685,7 +685,7 @@ export default function App() {
     if (!check.ok) {
       const customErrors = {
         mustPlayTrump:
-          lang === "ka"
+          lang === "ge"
             ? "ფერი არ გაქვს, მაგრამ მთავარი ფერი გაქვს, ამიტომ მთავარი ფერი უნდა ჩახვიდე."
             : "You do not have the led suit, but you have main suit, so you must play main suit.",
       };
@@ -873,7 +873,7 @@ export default function App() {
                       className="h-11 rounded-xl border border-white/10 bg-slate-950 px-3 font-bold outline-none"
                     >
                       <option value="en">EN</option>
-                      <option value="ka">KA</option>
+                      <option value="ge">ge</option>
                     </select>
 
                     <button
@@ -887,7 +887,7 @@ export default function App() {
                       to="/rules"
                       className="rounded-xl border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-center text-xs font-black text-amber-100 hover:bg-amber-300/20"
                     >
-                      {createLang === "ka" ? "წესები" : "Rules"}
+                      {createLang === "ge" ? "წესები" : "Rules"}
                     </Link>
                   </div>
                 </div>
@@ -974,7 +974,7 @@ export default function App() {
               className="h-10 rounded-xl border border-white/10 bg-slate-950 px-3 text-sm font-bold outline-none"
             >
               <option value="en">EN</option>
-              <option value="ka">KA</option>
+              <option value="ge">ge</option>
             </select>
 
             <button
@@ -1036,7 +1036,7 @@ export default function App() {
                 to="/rules"
                 className="rounded-xl border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-center text-xs font-black text-amber-100 hover:bg-amber-300/20"
               >
-                {createLang === "ka" ? "წესები" : "Rules"}
+                {createLang === "ge" ? "წესები" : "Rules"}
               </Link>
             </div>
 
@@ -1075,10 +1075,10 @@ export default function App() {
             <div className="flex flex-col items-center justify-center gap-6 rounded-[2rem] border border-white/10 bg-slate-900/80 p-10 text-center landscape:hidden sm:hidden">
               <div className="text-7xl animate-bounce">📱</div>
               <p className="text-2xl font-black text-amber-300">
-                {lang === "ka" ? "ტელეფონი მობრუნე" : "Rotate your phone"}
+                {lang === "ge" ? "ტელეფონი მობრუნე" : "Rotate your phone"}
               </p>
               <p className="text-sm text-slate-400">
-                {lang === "ka"
+                {lang === "ge"
                   ? "თამაში ჰორიზონტალურ რეჟიმში მუშაობს"
                   : "The game works in landscape mode"}
               </p>
@@ -1133,7 +1133,7 @@ export default function App() {
 
                   {!deckGame.deckId && (
                     <p className="mt-3 rounded-2xl bg-slate-900 p-3 text-sm font-bold text-slate-400">
-                      {lang === "ka"
+                      {lang === "ge"
                         ? "ჯერ დაარიგე 10 კარტი ყველა მოთამაშეზე."
                         : "Deal 10 cards to everyone first."}
                     </p>
@@ -1149,7 +1149,7 @@ export default function App() {
                         {currentContract.id === "tricks-positive" &&
                           deckGame.trumpSuit && (
                             <p className="mt-1 text-xs font-bold text-emerald-300">
-                              {lang === "ka" ? "მთავარი ფერი" : "Main suit"}:{" "}
+                              {lang === "ge" ? "მთავარი ფერი" : "Main suit"}:{" "}
                               {suitName(deckGame.trumpSuit, lang)}
                             </p>
                           )}
@@ -1197,7 +1197,7 @@ export default function App() {
                         onClick={confirmMode}
                         className="mt-4 min-h-[52px] w-full rounded-2xl bg-amber-300 px-4 font-black text-slate-950 hover:bg-amber-200"
                       >
-                        {lang === "ka" ? "რეჟიმის დადასტურება" : "Confirm mode"}
+                        {lang === "ge" ? "რეჟიმის დადასტურება" : "Confirm mode"}
                       </button>
                     )}
                 </aside>
@@ -1229,13 +1229,13 @@ export default function App() {
                             : players.find((p) => p.id === currentTurnId)?.name
                           : currentContract
                             ? mustRemoveCards
-                              ? lang === "ka"
+                              ? lang === "ge"
                                 ? "ამოიღე 2 კარტი"
                                 : "Remove 2 cards"
-                              : lang === "ka"
+                              : lang === "ge"
                                 ? "რაუნდი დაიწყება"
                                 : "Round will start"
-                            : lang === "ka"
+                            : lang === "ge"
                               ? "რეჟიმის არჩევა"
                               : "Choose mode"}
                       </p>
@@ -1338,7 +1338,7 @@ export default function App() {
                                   disabled={protectedRemove}
                                   title={
                                     protectedRemove
-                                      ? lang === "ka"
+                                      ? lang === "ge"
                                         ? "ამ რეჟიმში ამ კარტის ამოღება არ შეიძლება"
                                         : "You cannot remove this card in this mode"
                                       : ""
@@ -1452,7 +1452,7 @@ export default function App() {
                     <p className="mt-1 text-sm font-black text-amber-200">
                       {currentContract
                         ? currentContract.maxText
-                        : lang === "ka"
+                        : lang === "ge"
                           ? "ჯერ 10 კარტი დარიგდება, შემდეგ ამრჩევი აირჩევს რეჟიმს."
                           : "First deal 10 cards, then chooser chooses mode."}
                     </p>
@@ -1462,7 +1462,7 @@ export default function App() {
                     !deckGame.trumpLocked && (
                       <div className="mt-4 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-3">
                         <p className="text-xs font-black uppercase tracking-widest text-amber-200">
-                          {lang === "ka" ? "მთავარი ფერი" : "Main suit"}
+                          {lang === "ge" ? "მთავარი ფერი" : "Main suit"}
                         </p>
 
                         <div className="mt-3 grid grid-cols-1 gap-2">
@@ -1494,7 +1494,7 @@ export default function App() {
                                 >
                                   {suit.label}
                                 </span>{" "}
-                                {lang === "ka" ? suit.nameKa : suit.nameEn}
+                                {lang === "ge" ? suit.namege : suit.nameEn}
                               </button>
                             );
                           })}
@@ -1507,7 +1507,7 @@ export default function App() {
                     deckGame.trumpSuit && (
                       <div className="mt-4 rounded-2xl border border-emerald-300/30 bg-emerald-300/10 p-3">
                         <p className="text-xs font-bold text-emerald-200">
-                          {lang === "ka"
+                          {lang === "ge"
                             ? "არჩეული მთავარი ფერი"
                             : "Locked main suit"}
                         </p>

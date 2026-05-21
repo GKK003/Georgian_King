@@ -1,15 +1,43 @@
 export const KING_DECK_CODES = [
-  "AS", "KS", "QS", "JS", "0S", "9S", "8S", "7S",
-  "AD", "KD", "QD", "JD", "0D", "9D", "8D", "7D",
-  "AC", "KC", "QC", "JC", "0C", "9C", "8C", "7C",
-  "AH", "KH", "QH", "JH", "0H", "9H", "8H", "7H",
+  "AS",
+  "KS",
+  "QS",
+  "JS",
+  "0S",
+  "9S",
+  "8S",
+  "7S",
+  "AD",
+  "KD",
+  "QD",
+  "JD",
+  "0D",
+  "9D",
+  "8D",
+  "7D",
+  "AC",
+  "KC",
+  "QC",
+  "JC",
+  "0C",
+  "9C",
+  "8C",
+  "7C",
+  "AH",
+  "KH",
+  "QH",
+  "JH",
+  "0H",
+  "9H",
+  "8H",
+  "7H",
 ];
 
 export const SUITS = [
-  { id: "S", label: "♠", nameEn: "Spades", nameKa: "ყვავი" },
-  { id: "H", label: "♥", nameEn: "Hearts", nameKa: "გული" },
-  { id: "D", label: "♦", nameEn: "Diamonds", nameKa: "აგური" },
-  { id: "C", label: "♣", nameEn: "Clubs", nameKa: "ჯვარი" },
+  { id: "S", label: "♠", nameEn: "Spades", nameGe: "ყვავი" },
+  { id: "H", label: "♥", nameEn: "Hearts", nameGe: "გული" },
+  { id: "D", label: "♦", nameEn: "Diamonds", nameGe: "აგური" },
+  { id: "C", label: "♣", nameEn: "Clubs", nameGe: "ჯვარი" },
 ];
 
 export const emptyDeckGame = {
@@ -33,10 +61,10 @@ export const emptyDeckGame = {
 };
 
 const rankPower = {
-  "7": 1,
-  "8": 2,
-  "9": 3,
-  "0": 4,
+  7: 1,
+  8: 2,
+  9: 3,
+  0: 4,
   J: 5,
   Q: 6,
   K: 7,
@@ -97,7 +125,13 @@ export function canRemoveCard(card, contractId) {
   return !isProtectedRemoveCard(card, contractId);
 }
 
-export function canPlayCard({ hand, card, tableCards, contractId, trumpSuit = "" }) {
+export function canPlayCard({
+  hand,
+  card,
+  tableCards,
+  contractId,
+  trumpSuit = "",
+}) {
   if (!card) return { ok: false, error: "No card." };
 
   if (tableCards.length === 0) {
@@ -171,7 +205,13 @@ export function createTaken(players) {
   return taken;
 }
 
-export function addTrickToTaken({ taken, winnerId, tableCards, trickNumber, maxTricks }) {
+export function addTrickToTaken({
+  taken,
+  winnerId,
+  tableCards,
+  trickNumber,
+  maxTricks,
+}) {
   const next = structuredClone(taken);
   const wonCards = tableCards.map((item) => item.card);
 

@@ -83,7 +83,7 @@ const EN_CONTRACTS_3 = [
   },
 ];
 
-const KA_CONTRACTS_3 = [
+const ge_CONTRACTS_3 = [
   {
     id: "no-tricks",
     name: "არ აიღო კარტები",
@@ -228,7 +228,7 @@ export const LANGUAGES = {
       3: EN_CONTRACTS_3,
     },
   },
-  ka: {
+  ge: {
     ui: {
       title: "კინგი ონლაინ",
       subtitle: "თანამედროვე ონლაინ მაგიდა კინგისთვის.",
@@ -284,7 +284,7 @@ export const LANGUAGES = {
       3: "3 მოთამაშე • 32 კარტი • ამრჩევი 2 კარტს აგდებს",
     },
     contracts: {
-      3: KA_CONTRACTS_3,
+      3: ge_CONTRACTS_3,
     },
   },
 };

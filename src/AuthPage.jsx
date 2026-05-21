@@ -30,7 +30,7 @@ export default function AuthPage({ lang = "en" }) {
       submitRegister: "Create account",
       submitLogin: "Sign in",
     },
-    ka: {
+    ge: {
       title: "კინგი ონლაინ",
       subtitle: "ითამაშე კინგი ონლაინ მეგობრებთან.",
       register: "რეგისტრაცია",
@@ -50,31 +50,31 @@ export default function AuthPage({ lang = "en" }) {
   function getAuthErrorMessage(err) {
     const messages = {
       "auth/email-already-in-use":
-        lang === "ka"
+        lang === "ge"
           ? "ეს ელ-ფოსტა უკვე გამოყენებულია."
           : "Email already in use.",
       "auth/invalid-email":
-        lang === "ka" ? "არასწორი ელ-ფოსტა." : "Invalid email.",
+        lang === "ge" ? "არასწორი ელ-ფოსტა." : "Invalid email.",
       "auth/weak-password":
-        lang === "ka"
+        lang === "ge"
           ? "პაროლი მინიმუმ 6 სიმბოლო უნდა იყოს."
           : "Password must be at least 6 characters.",
       "auth/invalid-credential":
-        lang === "ka"
+        lang === "ge"
           ? "არასწორი ელ-ფოსტა ან პაროლი."
           : "Invalid email or password.",
       "auth/popup-blocked":
-        lang === "ka"
+        lang === "ge"
           ? "Popup დაიბლოკა. გადამისამართებით გაგრძელდება."
           : "Popup was blocked. Redirecting instead.",
       "auth/popup-closed-by-user":
-        lang === "ka" ? "Google ფანჯარა დაიხურა." : "Google popup was closed.",
+        lang === "ge" ? "Google ფანჯარა დაიხურა." : "Google popup was closed.",
       "auth/unauthorized-domain":
-        lang === "ka"
+        lang === "ge"
           ? "ეს დომენი Firebase-ში არ არის დამატებული."
           : "This domain is not authorized in Firebase.",
       "auth/operation-not-allowed":
-        lang === "ka"
+        lang === "ge"
           ? "Firebase-ში ეს შესვლის მეთოდი ჩართული არ არის."
           : "This sign-in method is not enabled in Firebase.",
     };
