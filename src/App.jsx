@@ -697,33 +697,19 @@ export default function App() {
       maxTricks: deckGame.maxTricks || 10,
     });
 
-    const isRoundOver =
-      (deckGame.trickNumber || 1) >= (deckGame.maxTricks || 8);
+    const currentTrickNumber = deckGame.trickNumber || 1;
+    const isRoundOver = currentTrickNumber >= (deckGame.maxTricks || 10);
 
     await patchRoom({
       deckGame: {
         ...deckGame,
         hands: nextHands,
-        tableCards: nextTableCards,
+        tableCards: isRoundOver ? nextTableCards : [],
         currentTurnId: winnerId,
         taken: nextTaken,
-        lastWinnerId: winnerId,
+        trickNumber: isRoundOver ? currentTrickNumber : currentTrickNumber + 1,
         roundOver: isRoundOver,
         error: "",
-      },
-    });
-  }
-
-  async function nextTrick() {
-    if (!deckGame.lastWinnerId || tableCards.length !== players.length) return;
-
-    await patchRoom({
-      deckGame: {
-        ...deckGame,
-        tableCards: [],
-        trickNumber: (deckGame.trickNumber || 1) + 1,
-        currentTurnId: deckGame.lastWinnerId,
-        lastWinnerId: "",
       },
     });
   }
@@ -1383,15 +1369,6 @@ export default function App() {
                         className="min-h-[52px] rounded-2xl border border-amber-300/40 bg-amber-300/10 px-6 font-black text-amber-100"
                       >
                         {ui.remove2}
-                      </button>
-                    )}
-
-                    {tableCards.length === players.length && !roundOver && (
-                      <button
-                        onClick={nextTrick}
-                        className="min-h-[52px] rounded-2xl border border-white/10 bg-slate-950/70 px-6 font-black hover:bg-white/10"
-                      >
-                        {ui.passToNext}
                       </button>
                     )}
 

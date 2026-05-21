@@ -208,7 +208,6 @@ export const LANGUAGES = {
       selectModeFirst: "Choose a mode first.",
       waitingPlayers: "Waiting for players...",
       playCard: "Play card",
-      passToNext: "Next trick",
       roundDone: "Round finished",
       signOut: "Sign out",
       errors: {
@@ -268,7 +267,6 @@ export const LANGUAGES = {
       selectModeFirst: "ჯერ აირჩიე რეჟიმი.",
       waitingPlayers: "ველოდებით მოთამაშეებს...",
       playCard: "კარტის ჩასვლა",
-      passToNext: "შემდეგი აღება",
       roundDone: "რაუნდი დასრულდა",
       signOut: "გამოსვლა",
       errors: {

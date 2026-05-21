@@ -26,7 +26,6 @@ export const emptyDeckGame = {
   loading: false,
   error: "",
   roundOver: false,
-  lastWinnerId: "",
   trumpSuit: "",
   trumpLocked: false,
   modeLocked: false,
