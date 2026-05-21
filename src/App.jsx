@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import {
   doc,
   getDoc,
@@ -11,6 +12,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, db } from "./firebase";
 import { LANGUAGES } from "./language";
 import AuthPage from "./AuthPage";
+import RulesPage from "./RulesPage";
 import {
   KING_DECK_CODES,
   SUITS,
@@ -52,6 +54,10 @@ function createUsedContracts(players) {
   return used;
 }
 
+function isSupportedPlayerCount(count) {
+  return count === 3;
+}
+
 function getSeatByUid(players, uid) {
   return players.find((player) => player.uid === uid);
 }
@@ -72,11 +78,21 @@ function loadLocal() {
 }
 
 function saveLocal(data) {
-  localStorage.setItem(LOCAL_KEY, JSON.stringify(data));
+  localStorage.setItem(LOCAL_KEY, JSON.stringify({ ...loadLocal(), ...data }));
 }
 
 function clearLocal() {
-  localStorage.removeItem(LOCAL_KEY);
+  const { lang, name } = loadLocal();
+  const nextLocal = {};
+
+  if (lang) nextLocal.lang = lang;
+  if (name) nextLocal.name = name;
+
+  if (Object.keys(nextLocal).length) {
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(nextLocal));
+  } else {
+    localStorage.removeItem(LOCAL_KEY);
+  }
 }
 
 function suitName(suit, lang) {
@@ -86,6 +102,7 @@ function suitName(suit, lang) {
 }
 
 export default function App() {
+  const navigate = useNavigate();
   const local = loadLocal();
 
   const [user, setUser] = useState(null);
@@ -94,7 +111,7 @@ export default function App() {
   const [seatId, setSeatId] = useState(local.seatId || "");
   const [joinCode, setJoinCode] = useState("");
   const [joinName, setJoinName] = useState(local.name || "");
-  const [createCount, setCreateCount] = useState(3);
+  const createCount = 3;
   const [createLang, setCreateLang] = useState(local.lang || "en");
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -132,6 +149,20 @@ export default function App() {
         }
 
         const data = { id: snap.id, ...snap.data() };
+
+        if (!isSupportedPlayerCount(data.playerCount || 3)) {
+          clearLocal();
+          setRoomCode("");
+          setSeatId("");
+          setRoom(null);
+          setPageError(
+            createLang === "ka"
+              ? "ეს ვერსია მხოლოდ 3 მოთამაშისთვის არის."
+              : "This version only supports 3-player rooms.",
+          );
+          return;
+        }
+
         setRoom(data);
 
         if (user?.uid) {
@@ -151,7 +182,7 @@ export default function App() {
     );
 
     return () => unsub();
-  }, [roomCode, user?.uid]);
+  }, [roomCode, user?.uid, createLang]);
 
   const players = useMemo(() => {
     const list = room?.players || createPlayers(playerCount);
@@ -212,7 +243,6 @@ export default function App() {
   }
 
   function addExtraCardsToChooser(baseDeck = deckGame) {
-    if (playerCount !== 3) return baseDeck;
     if ((baseDeck.pendingExtraCards || []).length !== 2) return baseDeck;
 
     const chooserHand = baseDeck.hands?.[chooser.id] || [];
@@ -237,7 +267,7 @@ export default function App() {
     try {
       const name = joinName.trim() || user.displayName || user.email;
       const code = makeRoomCode();
-      const playersList = createPlayers(createCount);
+      const playersList = createPlayers(3);
 
       playersList[0] = {
         ...playersList[0],
@@ -248,7 +278,7 @@ export default function App() {
 
       await setDoc(doc(db, "kingRooms", code), {
         lang: createLang,
-        playerCount: createCount,
+        playerCount: 3,
         players: playersList,
         status: "lobby",
         chooserIndex: 0,
@@ -290,6 +320,15 @@ export default function App() {
 
       const data = snap.data();
       const playersList = data.players || [];
+
+      if (!isSupportedPlayerCount(data.playerCount || 3)) {
+        setPageError(
+          lang === "ka"
+            ? "ეს ვერსია მხოლოდ 3 მოთამაშისთვის არის."
+            : "This version only supports 3-player rooms.",
+        );
+        return;
+      }
 
       let seatIndex = playersList.findIndex(
         (player) => player.uid === user.uid,
@@ -355,7 +394,13 @@ export default function App() {
 
   async function changeLanguage(nextLang) {
     setCreateLang(nextLang);
+    saveLocal({ lang: nextLang });
     if (roomCode) await patchRoom({ lang: nextLang });
+  }
+
+  function changeCreateLanguage(nextLang) {
+    setCreateLang(nextLang);
+    saveLocal({ lang: nextLang });
   }
 
   async function dealCards() {
@@ -388,7 +433,7 @@ export default function App() {
       let cardIndex = 0;
 
       players.forEach((player) => {
-        const give = playerCount === 3 ? 10 : 8;
+        const give = 10;
         hands[player.id] = sortCards(
           drawData.cards.slice(cardIndex, cardIndex + give),
         );
@@ -401,11 +446,8 @@ export default function App() {
           ...emptyDeckGame,
           deckId: shuffleData.deck_id,
           hands,
-          pendingExtraCards:
-            playerCount === 3
-              ? drawData.cards.slice(cardIndex, cardIndex + 2)
-              : [],
-          maxTricks: playerCount === 3 ? 10 : 8,
+          pendingExtraCards: drawData.cards.slice(cardIndex, cardIndex + 2),
+          maxTricks: 10,
           taken: createTaken(players),
           loading: false,
         },
@@ -458,7 +500,7 @@ export default function App() {
         ...withExtra,
         trumpLocked: currentContract.id === "tricks-positive",
         modeLocked: true,
-        currentTurnId: playerCount === 3 ? "" : chooser.id,
+        currentTurnId: "",
         error: "",
       },
     });
@@ -480,7 +522,6 @@ export default function App() {
   }
 
   async function toggleRemoveCard(code) {
-    if (playerCount !== 3) return;
     if (seatId !== chooser.id) return;
     if (!currentContract) return;
 
@@ -526,7 +567,6 @@ export default function App() {
   }
 
   async function removeSelectedCards() {
-    if (playerCount !== 3) return;
     if (seatId !== chooser.id) return;
     if (!currentContract) return;
 
@@ -654,7 +694,7 @@ export default function App() {
       winnerId,
       tableCards: nextTableCards,
       trickNumber: deckGame.trickNumber || 1,
-      maxTricks: deckGame.maxTricks || (playerCount === 3 ? 10 : 8),
+      maxTricks: deckGame.maxTricks || 10,
     });
 
     const isRoundOver =
@@ -748,6 +788,7 @@ export default function App() {
     setRoomCode("");
     setSeatId("");
     setRoom(null);
+    navigate("/room", { replace: true });
   }
 
   async function handleSignOut() {
@@ -764,99 +805,122 @@ export default function App() {
   }
 
   if (!user) {
-    return <AuthPage lang={createLang} />;
+    return (
+      <Routes>
+        <Route path="/auth" element={<AuthPage lang={createLang} />} />
+        <Route
+          path="/rules"
+          element={<RulesPage backTo="/auth" lang={createLang} />}
+        />
+        <Route path="*" element={<Navigate to="/auth" replace />} />
+      </Routes>
+    );
   }
 
   if (!roomCode || !room) {
     const lobbyUi = LANGUAGES[createLang].ui;
 
     return (
-      <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100">
-        <section className="mx-auto max-w-xl rounded-[2rem] border border-white/10 bg-slate-900 p-5 shadow-2xl">
-          <div className="mb-6 flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-4xl font-black">{lobbyUi.title}</h1>
-              <p className="mt-2 text-sm text-slate-400">{lobbyUi.subtitle}</p>
-              <p className="mt-2 text-xs font-bold text-amber-300">
-                {user.displayName || user.email}
-              </p>
-            </div>
+      <Routes>
+        <Route path="/" element={<Navigate to="/room" replace />} />
+        <Route path="/auth" element={<Navigate to="/room" replace />} />
+        <Route path="/lobby" element={<Navigate to="/room" replace />} />
+        <Route path="/game" element={<Navigate to="/room" replace />} />
+        <Route
+          path="/rules"
+          element={<RulesPage backTo="/room" lang={createLang} />}
+        />
+        <Route
+          path="/room"
+          element={
+            <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100">
+              <section className="mx-auto max-w-xl rounded-[2rem] border border-white/10 bg-slate-900 p-5 shadow-2xl">
+                <div className="mb-6 flex items-start justify-between gap-4">
+                  <div>
+                    <h1 className="text-4xl font-black">{lobbyUi.title}</h1>
+                    <p className="mt-2 text-sm text-slate-400">
+                      {lobbyUi.subtitle}
+                    </p>
+                    <p className="mt-2 text-xs font-bold text-amber-300">
+                      {user.displayName || user.email}
+                    </p>
+                  </div>
 
-            <div className="flex flex-col gap-2">
-              <select
-                value={createLang}
-                onChange={(event) => setCreateLang(event.target.value)}
-                className="h-11 rounded-xl border border-white/10 bg-slate-950 px-3 font-bold outline-none"
-              >
-                <option value="en">EN</option>
-                <option value="ka">KA</option>
-              </select>
+                  <div className="flex flex-col gap-2">
+                    <select
+                      value={createLang}
+                      onChange={(event) =>
+                        changeCreateLanguage(event.target.value)
+                      }
+                      className="h-11 rounded-xl border border-white/10 bg-slate-950 px-3 font-bold outline-none"
+                    >
+                      <option value="en">EN</option>
+                      <option value="ka">KA</option>
+                    </select>
 
-              <button
-                onClick={handleSignOut}
-                className="rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-slate-400 hover:bg-white/10"
-              >
-                {lobbyUi.signOut}
-              </button>
-            </div>
-          </div>
+                    <button
+                      onClick={handleSignOut}
+                      className="rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-slate-400 hover:bg-white/10"
+                    >
+                      {lobbyUi.signOut}
+                    </button>
 
-          {pageError && (
-            <div className="mb-4 rounded-2xl border border-rose-400/30 bg-rose-500/10 p-3 text-sm font-bold text-rose-200">
-              {pageError}
-            </div>
-          )}
+                    <Link
+                      to="/rules"
+                      className="rounded-xl border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-center text-xs font-black text-amber-100 hover:bg-amber-300/20"
+                    >
+                      {createLang === "ka" ? "წესები" : "Rules"}
+                    </Link>
+                  </div>
+                </div>
 
-          <input
-            value={joinName}
-            onChange={(event) => setJoinName(event.target.value)}
-            placeholder={lobbyUi.yourName}
-            className="mb-3 h-12 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 font-bold outline-none focus:border-amber-300"
-          />
-
-          <div className="mb-3 grid grid-cols-2 gap-3">
-            {[3, 4].map((count) => (
-              <button
-                key={count}
-                onClick={() => setCreateCount(count)}
-                className={classNames(
-                  "rounded-2xl border p-4 text-left font-black",
-                  createCount === count
-                    ? "border-amber-300 bg-amber-300 text-slate-950"
-                    : "border-white/10 bg-slate-950",
+                {pageError && (
+                  <div className="mb-4 rounded-2xl border border-rose-400/30 bg-rose-500/10 p-3 text-sm font-bold text-rose-200">
+                    {pageError}
+                  </div>
                 )}
-              >
-                {count} {lobbyUi.players}
-              </button>
-            ))}
-          </div>
 
-          <button
-            onClick={createRoom}
-            disabled={loading}
-            className="mb-6 min-h-[58px] w-full rounded-2xl bg-amber-300 px-5 text-lg font-black text-slate-950 hover:bg-amber-200 disabled:opacity-60"
-          >
-            {lobbyUi.createRoom}
-          </button>
+                <input
+                  value={joinName}
+                  onChange={(event) => setJoinName(event.target.value)}
+                  placeholder={lobbyUi.yourName}
+                  className="mb-3 h-12 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 font-bold outline-none focus:border-amber-300"
+                />
 
-          <div className="rounded-2xl bg-slate-950 p-4">
-            <input
-              value={joinCode}
-              onChange={(event) => setJoinCode(event.target.value)}
-              placeholder={lobbyUi.roomCode}
-              className="mb-3 h-12 w-full rounded-2xl border border-white/10 bg-slate-900 px-4 font-bold uppercase outline-none focus:border-amber-300"
-            />
+                <div className="mb-3 rounded-2xl border border-amber-300 bg-amber-300 p-4 text-left font-black text-slate-950">
+                  3 {lobbyUi.players}
+                </div>
 
-            <button
-              onClick={joinRoom}
-              disabled={loading}
-              className="min-h-[58px] w-full rounded-2xl border border-white/10 px-5 text-lg font-black hover:bg-white/10 disabled:opacity-60"
-            >
-              {lobbyUi.joinRoom}
-            </button>
-          </div>
-        </section>
-      </main>
+                <button
+                  onClick={createRoom}
+                  disabled={loading}
+                  className="mb-6 min-h-[58px] w-full rounded-2xl bg-amber-300 px-5 text-lg font-black text-slate-950 hover:bg-amber-200 disabled:opacity-60"
+                >
+                  {lobbyUi.createRoom}
+                </button>
+
+                <div className="rounded-2xl bg-slate-950 p-4">
+                  <input
+                    value={joinCode}
+                    onChange={(event) => setJoinCode(event.target.value)}
+                    placeholder={lobbyUi.roomCode}
+                    className="mb-3 h-12 w-full rounded-2xl border border-white/10 bg-slate-900 px-4 font-bold uppercase outline-none focus:border-amber-300"
+                  />
+
+                  <button
+                    onClick={joinRoom}
+                    disabled={loading}
+                    className="min-h-[58px] w-full rounded-2xl border border-white/10 px-5 text-lg font-black hover:bg-white/10 disabled:opacity-60"
+                  >
+                    {lobbyUi.joinRoom}
+                  </button>
+                </div>
+              </section>
+            </main>
+          }
+        />
+        <Route path="*" element={<Navigate to="/room" replace />} />
+      </Routes>
     );
   }
 
@@ -868,13 +932,13 @@ export default function App() {
   );
   const chooserHandLength = deckGame.hands?.[chooser.id]?.length || 0;
   const mustRemoveCards =
-    playerCount === 3 &&
     currentContract &&
     deckGame.modeLocked &&
     chooserHandLength === 12 &&
     (deckGame.removedCards || []).length === 0;
 
-  return (
+  const activeRoomPath = gameStatus === "playing" ? "/game" : "/lobby";
+  const roomSessionPage = (
     <main className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_center,#15414b_0%,#071923_48%,#020617_100%)] text-slate-100">
       <div className="mobile-landscape-scale mx-auto flex min-h-screen max-w-7xl flex-col px-3 py-3 sm:px-5">
         <header className="z-20 mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-slate-950/70 px-3 py-2 backdrop-blur">
@@ -949,6 +1013,13 @@ export default function App() {
                   {ui.startGame}
                 </button>
               )}
+
+              <Link
+                to="/rules"
+                className="rounded-xl border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-center text-xs font-black text-amber-100 hover:bg-amber-300/20"
+              >
+                {createLang === "ka" ? "წესები" : "Rules"}
+              </Link>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -1534,5 +1605,38 @@ export default function App() {
         )}
       </div>
     </main>
+  );
+
+  return (
+    <Routes>
+      <Route path="/" element={<Navigate to={activeRoomPath} replace />} />
+      <Route path="/auth" element={<Navigate to={activeRoomPath} replace />} />
+      <Route path="/room" element={<Navigate to={activeRoomPath} replace />} />
+      <Route
+        path="/lobby"
+        element={
+          gameStatus === "playing" ? (
+            <Navigate to="/game" replace />
+          ) : (
+            roomSessionPage
+          )
+        }
+      />
+      <Route
+        path="/game"
+        element={
+          gameStatus !== "playing" ? (
+            <Navigate to="/lobby" replace />
+          ) : (
+            roomSessionPage
+          )
+        }
+      />
+      <Route
+        path="/rules"
+        element={<RulesPage backTo={activeRoomPath} lang={lang} />}
+      />
+      <Route path="*" element={<Navigate to={activeRoomPath} replace />} />
+    </Routes>
   );
 }
