@@ -1,0 +1,30 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Android: Sync Web App",
+      "type": "npm",
+      "script": "android:sync",
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Open Studio",
+      "type": "npm",
+      "script": "android:open",
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Build Debug APK",
+      "type": "npm",
+      "script": "android:apk",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Run On Device",
+      "type": "npm",
+      "script": "android:run",
+      "problemMatcher": []
+    }
+  ]
+}

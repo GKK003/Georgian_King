@@ -1,6 +1,10 @@
 import React, { useState } from "react";
+import { Capacitor } from "@capacitor/core";
+import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import {
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithCredential,
   signInWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
@@ -82,12 +86,50 @@ export default function AuthPage({ lang = "en" }) {
     return messages[err.code] || err.message;
   }
 
+  function getNativeGoogleErrorMessage(err) {
+    const text = err?.message || err?.code || "";
+
+    if (
+      text.includes("default_web_client_id") ||
+      text.includes("WILL_BE_OVERRIDDEN") ||
+      text.includes("10:")
+    ) {
+      return lang === "ge"
+        ? "APK-ში Google შესვლისთვის Firebase Android app და google-services.json უნდა დაემატოს."
+        : "Google sign-in in the APK needs the Firebase Android app setup and google-services.json.";
+    }
+
+    return getAuthErrorMessage(err);
+  }
+
   async function signInGoogle() {
     setError("");
+    setLoading(true);
 
     try {
+      if (Capacitor.isNativePlatform()) {
+        const result = await FirebaseAuthentication.signInWithGoogle({
+          skipNativeAuth: true,
+        });
+        const idToken = result.credential?.idToken;
+        const accessToken = result.credential?.accessToken;
+
+        if (!idToken && !accessToken) {
+          throw new Error("Google did not return a sign-in token.");
+        }
+
+        const credential = GoogleAuthProvider.credential(idToken, accessToken);
+        await signInWithCredential(auth, credential);
+        return;
+      }
+
       await signInWithPopup(auth, googleProvider);
     } catch (err) {
+      if (Capacitor.isNativePlatform()) {
+        setError(getNativeGoogleErrorMessage(err));
+        return;
+      }
+
       if (err.code === "auth/popup-blocked") {
         try {
           await signInWithRedirect(auth, googleProvider);
@@ -99,6 +141,8 @@ export default function AuthPage({ lang = "en" }) {
       }
 
       setError(getAuthErrorMessage(err));
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -223,9 +267,10 @@ export default function AuthPage({ lang = "en" }) {
         <button
           type="button"
           onClick={signInGoogle}
-          className="min-h-[54px] w-full rounded-2xl border border-white/10 bg-slate-950 px-5 font-black text-slate-100 hover:bg-white/5"
+          disabled={loading}
+          className="min-h-[54px] w-full rounded-2xl border border-white/10 bg-slate-950 px-5 font-black text-slate-100 hover:bg-white/5 disabled:opacity-60"
         >
-          {ui.google}
+          {loading ? "..." : ui.google}
         </button>
       </section>
     </main>

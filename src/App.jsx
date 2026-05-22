@@ -1,5 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { createPortal } from "react-dom";
+import {
+  Link,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
+import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
+import { ScreenOrientation } from "@capacitor/screen-orientation";
 import {
   doc,
   getDoc,
@@ -104,6 +115,7 @@ function suitName(suit, lang) {
 
 export default function App() {
   const navigate = useNavigate();
+  const location = useLocation();
   const local = loadLocal();
 
   const [user, setUser] = useState(null);
@@ -211,6 +223,79 @@ export default function App() {
   const roundOver = deckGame.roundOver || false;
   const totalRounds = contracts.length * players.length;
   const gameFinished = history.length >= totalRounds;
+  const tableLeadId = tableCards[0]?.playerId || currentTurnId || players[0]?.id;
+  const tablePlayers = useMemo(() => {
+    if (!players.length) return [];
+
+    const leadIndex = players.findIndex((player) => player.id === tableLeadId);
+    const startIndex = leadIndex >= 0 ? leadIndex : 0;
+
+    return [...players.slice(startIndex), ...players.slice(0, startIndex)];
+  }, [players, tableLeadId]);
+  const chooserHandLength = deckGame.hands?.[chooser.id]?.length || 0;
+  const mustRemoveCards =
+    currentContract &&
+    deckGame.modeLocked &&
+    chooserHandLength === 12 &&
+    (deckGame.removedCards || []).length === 0;
+  const selectedRemoveCount = (deckGame.selectedToRemove || []).length;
+  const showPhoneModePopup =
+    gameStatus === "playing" &&
+    deckGame.deckId &&
+    !deckGame.modeLocked &&
+    seatId === chooser.id;
+  const showPhoneRemoveDock =
+    gameStatus === "playing" && mustRemoveCards && seatId === chooser.id;
+  const phoneChoiceOpen = showPhoneModePopup;
+  const canConfirmMode =
+    currentContract &&
+    (currentContract.id !== "tricks-positive" || deckGame.trumpSuit);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const isGameScreen =
+      location.pathname === "/game" && gameStatus === "playing";
+
+    async function applyOrientation() {
+      try {
+        if (isGameScreen) {
+          await ScreenOrientation.lock({ orientation: "landscape" });
+        } else {
+          await ScreenOrientation.unlock();
+        }
+      } catch (error) {
+        console.warn("Could not update screen orientation", error);
+      }
+    }
+
+    applyOrientation();
+  }, [location.pathname, gameStatus]);
+
+  useEffect(() => {
+    if (!phoneChoiceOpen) return;
+    if (typeof window === "undefined") return;
+
+    const isPhoneLandscape = window.matchMedia(
+      "(orientation: landscape) and (max-width: 1024px)",
+    ).matches;
+
+    if (!isPhoneLandscape) return;
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, [phoneChoiceOpen]);
 
   const totals = useMemo(() => {
     const result = {};
@@ -810,6 +895,9 @@ export default function App() {
   async function handleSignOut() {
     leaveRoom();
     await signOut(auth);
+    if (Capacitor.isNativePlatform()) {
+      await FirebaseAuthentication.signOut().catch(() => {});
+    }
   }
 
   if (authLoading) {
@@ -946,18 +1034,22 @@ export default function App() {
   const allReady = players.every(
     (player) => player.ready || player.id === "p1",
   );
-  const chooserHandLength = deckGame.hands?.[chooser.id]?.length || 0;
-  const mustRemoveCards =
-    currentContract &&
-    deckGame.modeLocked &&
-    chooserHandLength === 12 &&
-    (deckGame.removedCards || []).length === 0;
 
   const activeRoomPath = gameStatus === "playing" ? "/game" : "/lobby";
   const roomSessionPage = (
-    <main className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_center,#15414b_0%,#071923_48%,#020617_100%)] text-slate-100">
-      <div className="mobile-landscape-scale mx-auto flex min-h-screen max-w-7xl flex-col px-3 py-3 sm:px-5">
-        <header className="z-20 mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-slate-950/70 px-3 py-2 backdrop-blur">
+    <main
+      className={classNames(
+        "room-session-page min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_center,#15414b_0%,#071923_48%,#020617_100%)] text-slate-100",
+        gameStatus === "playing" && "phone-room-session-page",
+      )}
+    >
+      <div
+        className={classNames(
+          "room-session-shell mobile-landscape-scale mx-auto flex min-h-screen max-w-7xl flex-col px-3 py-3 sm:px-5",
+          gameStatus === "playing" && "phone-game-shell",
+        )}
+      >
+        <header className="game-topbar z-20 mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-slate-950/70 px-3 py-2 backdrop-blur">
           <div>
             <p className="text-xs font-bold text-amber-300">
               {ui.roomCode}: {roomCode}
@@ -965,7 +1057,7 @@ export default function App() {
             <p className="text-lg font-black">{ui.title}</p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="game-topbar-actions flex flex-wrap gap-2">
             <select
               value={lang}
               onChange={(event) => changeLanguage(event.target.value)}
@@ -1083,8 +1175,8 @@ export default function App() {
               <div className="text-5xl opacity-50">↻</div>
             </div>
 
-            <section className="relative hidden flex-col rounded-[2rem] border border-white/10 bg-emerald-950/20 p-3 shadow-2xl backdrop-blur landscape:flex sm:flex sm:p-4">
-              <div className="flex min-h-[88px] items-start justify-around gap-3 lg:min-h-[96px]">
+            <section className="game-board relative hidden flex-col rounded-[2rem] border border-white/10 bg-emerald-950/20 p-3 shadow-2xl backdrop-blur landscape:flex sm:flex sm:p-4">
+              <div className="opponents-strip flex min-h-[88px] items-start justify-around gap-3 lg:min-h-[96px]">
                 {topPlayers.map((player) => {
                   const handLength = deckGame.hands?.[player.id]?.length || 0;
                   const active = currentTurnId === player.id;
@@ -1096,7 +1188,7 @@ export default function App() {
                     >
                       <div
                         className={classNames(
-                          "rounded-2xl border px-4 py-2 text-center shadow-lg",
+                          "opponent-badge rounded-2xl border px-4 py-2 text-center shadow-lg",
                           active
                             ? "border-amber-300 bg-amber-300 text-slate-950 shadow-glow"
                             : "border-white/10 bg-slate-950/80",
@@ -1108,12 +1200,12 @@ export default function App() {
                         </p>
                       </div>
 
-                      <div className="flex justify-center">
+                      <div className="opponent-card-stack flex justify-center">
                         {Array.from({ length: Math.min(handLength, 10) }).map(
                           (_, index) => (
                             <div
                               key={index}
-                              className="card-fan h-12 w-8 rounded-md border border-white/10 bg-[repeating-linear-gradient(45deg,#7f1d1d,#7f1d1d_4px,#f8fafc_4px,#f8fafc_7px)] shadow-md sm:h-14 sm:w-10"
+                              className="opponent-card-back card-fan h-12 w-8 rounded-md border border-white/10 bg-[repeating-linear-gradient(45deg,#7f1d1d,#7f1d1d_4px,#f8fafc_4px,#f8fafc_7px)] shadow-md sm:h-14 sm:w-10"
                             />
                           ),
                         )}
@@ -1123,8 +1215,8 @@ export default function App() {
                 })}
               </div>
 
-              <div className="grid flex-1 grid-cols-1 gap-3 lg:grid-cols-[240px_1fr_240px]">
-                <aside className="order-2 rounded-3xl border border-white/10 bg-slate-950/70 p-4 lg:order-1">
+              <div className="game-layout-grid grid flex-1 grid-cols-1 gap-3 lg:grid-cols-[240px_1fr_240px]">
+                <aside className="mode-panel order-2 rounded-3xl border border-white/10 bg-slate-950/70 p-4 lg:order-1">
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
                     {ui.chooseMode}
                   </p>
@@ -1155,7 +1247,7 @@ export default function App() {
                     )}
 
                   {deckGame.deckId && !deckGame.modeLocked && (
-                    <div className="mt-3 space-y-2">
+                    <div className="mode-list mt-3 space-y-2">
                       {contracts.map((contract) => {
                         const used = (usedContracts[chooser.id] || []).includes(
                           contract.id,
@@ -1169,7 +1261,7 @@ export default function App() {
                             disabled={!canChoose}
                             onClick={() => chooseContract(contract)}
                             className={classNames(
-                              "w-full rounded-2xl border p-3 text-left text-sm transition",
+                              "mode-option w-full rounded-2xl border p-3 text-left text-sm transition",
                               selected
                                 ? "border-amber-300 bg-amber-300/10 text-amber-100"
                                 : "border-white/10 bg-slate-900/80 text-slate-300",
@@ -1193,16 +1285,16 @@ export default function App() {
                     seatId === chooser.id && (
                       <button
                         onClick={confirmMode}
-                        className="mt-4 min-h-[52px] w-full rounded-2xl bg-amber-300 px-4 font-black text-slate-950 hover:bg-amber-200"
+                        className="mode-confirm-button mt-4 min-h-[52px] w-full rounded-2xl bg-amber-300 px-4 font-black text-slate-950 hover:bg-amber-200"
                       >
                         {lang === "ge" ? "რეჟიმის დადასტურება" : "Confirm mode"}
                       </button>
                     )}
                 </aside>
 
-                <div className="order-1 flex min-h-[260px] flex-col justify-between rounded-[2rem] border border-white/10 bg-black/10 p-3 lg:order-2 lg:min-h-[300px]">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3">
+                <div className="play-panel order-1 flex min-h-[260px] flex-col justify-between rounded-[2rem] border border-white/10 bg-black/10 p-3 lg:order-2 lg:min-h-[300px]">
+                  <div className="play-status-row flex flex-wrap items-center justify-between gap-3">
+                    <div className="play-status-card rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3">
                       <p className="text-xs font-bold text-slate-500">
                         {ui.chooser}
                       </p>
@@ -1211,7 +1303,7 @@ export default function App() {
                       </p>
                     </div>
 
-                    <div className="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-right">
+                    <div className="play-status-card rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-right">
                       <p className="text-xs font-bold text-slate-500">
                         {ui.turn}
                       </p>
@@ -1240,11 +1332,53 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="flex flex-1 items-center justify-center py-3 lg:py-4">
-                    <div className="relative w-full max-w-4xl rounded-[2rem] border border-white/10 bg-emerald-900/30 p-3 flex flex-col gap-3">
-                      {/* Table area: opponents + my played card */}
-                      <div className="flex flex-wrap items-end justify-center gap-4">
-                        {/* Opponents' played cards */}
+                  <div className="table-stage flex flex-1 items-center justify-center py-3 lg:py-4">
+                    <div className="table-surface relative w-full max-w-4xl rounded-[2rem] border border-white/10 bg-emerald-900/30 p-3 flex flex-col gap-3">
+                      {/* Table area ordered from the player who led the trick */}
+                      <div className="played-cards-row flex flex-wrap items-end justify-center gap-4">
+                        {/* Played cards */}
+                        {tablePlayers.map((player) => {
+                          const played = tableCards.find(
+                            (item) => item.playerId === player.id,
+                          );
+                          const isMe = player.id === seatId;
+
+                          return (
+                            <div
+                              key={player.id}
+                              className="flex flex-col items-center gap-2"
+                            >
+                              <p
+                                className={classNames(
+                                  "table-player-name text-xs font-bold",
+                                  isMe ? "text-amber-300" : "text-slate-300",
+                                )}
+                              >
+                                {player.name}
+                                {isMe ? ` (${ui.you || "you"})` : ""}
+                              </p>
+                              {played ? (
+                                <img
+                                  src={played.card.image}
+                                  alt={played.card.code}
+                                  className="table-card-img w-14 rounded-lg shadow-2xl sm:w-16 lg:w-[70px]"
+                                />
+                              ) : (
+                                <div
+                                  className={classNames(
+                                    "table-card-placeholder flex h-20 w-14 items-center justify-center rounded-lg border border-dashed text-xs sm:h-24 sm:w-16",
+                                    isMe
+                                      ? "border-amber-300/20 text-amber-300/40"
+                                      : "border-white/15 text-slate-500",
+                                  )}
+                                >
+                                  —
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                        <div className="hidden">
                         {players
                           .filter((p) => p.id !== seatId)
                           .map((player) => {
@@ -1256,17 +1390,17 @@ export default function App() {
                                 key={player.id}
                                 className="flex flex-col items-center gap-2"
                               >
-                                <p className="text-xs font-bold text-slate-300">
+                                <p className="table-player-name text-xs font-bold text-slate-300">
                                   {player.name}
                                 </p>
                                 {played ? (
                                   <img
                                     src={played.card.image}
                                     alt={played.card.code}
-                                    className="w-14 rounded-lg shadow-2xl sm:w-16 lg:w-[70px]"
+                                    className="table-card-img w-14 rounded-lg shadow-2xl sm:w-16 lg:w-[70px]"
                                   />
                                 ) : (
-                                  <div className="flex h-20 w-14 items-center justify-center rounded-lg border border-dashed border-white/15 text-xs text-slate-500 sm:h-24 sm:w-16">
+                                  <div className="table-card-placeholder flex h-20 w-14 items-center justify-center rounded-lg border border-dashed border-white/15 text-xs text-slate-500 sm:h-24 sm:w-16">
                                     —
                                   </div>
                                 )}
@@ -1281,23 +1415,24 @@ export default function App() {
                           );
                           return (
                             <div className="flex flex-col items-center gap-2">
-                              <p className="text-xs font-bold text-amber-300">
+                              <p className="table-player-name text-xs font-bold text-amber-300">
                                 {me?.name} ({ui.you || "you"})
                               </p>
                               {myPlayed ? (
                                 <img
                                   src={myPlayed.card.image}
                                   alt={myPlayed.card.code}
-                                  className="w-14 rounded-lg shadow-2xl sm:w-16 lg:w-[70px]"
+                                  className="table-card-img w-14 rounded-lg shadow-2xl sm:w-16 lg:w-[70px]"
                                 />
                               ) : (
-                                <div className="flex h-20 w-14 items-center justify-center rounded-lg border border-dashed border-amber-300/20 text-xs text-amber-300/40 sm:h-24 sm:w-16">
+                                <div className="table-card-placeholder flex h-20 w-14 items-center justify-center rounded-lg border border-dashed border-amber-300/20 text-xs text-amber-300/40 sm:h-24 sm:w-16">
                                   —
                                 </div>
                               )}
                             </div>
                           );
                         })()}
+                        </div>
                       </div>
 
                       {/* Divider */}
@@ -1305,7 +1440,7 @@ export default function App() {
 
                       {/* My hand at the bottom */}
                       <div className="flex flex-col items-center gap-1">
-                        <p className="text-xs font-bold text-amber-300">
+                        <p className="hand-label text-xs font-bold text-amber-300">
                           {me?.name} — {myHand.length} {ui.cards}
                         </p>
                         {myHand.length === 0 ? (
@@ -1313,7 +1448,7 @@ export default function App() {
                             {ui.noCards}
                           </p>
                         ) : (
-                          <div className="flex w-full items-end justify-center overflow-x-auto overflow-y-visible pb-2 pt-6">
+                          <div className="hand-scroll flex w-full items-end justify-center overflow-x-auto overflow-y-visible pb-2 pt-6">
                             {myHand.map((card) => {
                               const selected = (
                                 deckGame.selectedToRemove || []
@@ -1347,7 +1482,7 @@ export default function App() {
                                       : canPlay && playCard(card)
                                   }
                                   className={classNames(
-                                    "card-fan shrink-0 rounded-xl border p-1 transition duration-150",
+                                    "card-button card-fan shrink-0 rounded-xl border p-1 transition duration-150",
                                     selected
                                       ? "-translate-y-3 border-amber-300 bg-amber-300/20"
                                       : "border-transparent",
@@ -1378,7 +1513,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap justify-center gap-3">
+                  <div className="action-row flex flex-wrap justify-center gap-3">
                     {!deckGame.deckId && (
                       <button
                         onClick={dealCards}
@@ -1396,7 +1531,8 @@ export default function App() {
                     {mustRemoveCards && seatId === chooser.id && (
                       <button
                         onClick={removeSelectedCards}
-                        className="min-h-[52px] rounded-2xl border border-amber-300/40 bg-amber-300/10 px-6 font-black text-amber-100"
+                        disabled={selectedRemoveCount !== 2}
+                        className="desktop-choice-action min-h-[52px] rounded-2xl border border-amber-300/40 bg-amber-300/10 px-6 font-black text-amber-100 disabled:opacity-50"
                       >
                         {ui.remove2}
                       </button>
@@ -1413,18 +1549,18 @@ export default function App() {
                   </div>
                 </div>
 
-                <aside className="order-3 rounded-3xl border border-white/10 bg-slate-950/70 p-4">
+                <aside className="score-panel order-3 rounded-3xl border border-white/10 bg-slate-950/70 p-4">
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
                     {ui.scoreboard}
                   </p>
 
-                  <div className="mt-3 space-y-2">
+                  <div className="score-list mt-3 space-y-2">
                     {[...players]
                       .sort((a, b) => (totals[b.id] || 0) - (totals[a.id] || 0))
                       .map((player, index) => (
                         <div
                           key={player.id}
-                          className="flex justify-between rounded-2xl bg-slate-900/80 p-3 text-sm"
+                          className="score-row flex justify-between rounded-2xl bg-slate-900/80 p-3 text-sm"
                         >
                           <span className="font-bold">
                             {index + 1}. {player.name}
@@ -1443,7 +1579,7 @@ export default function App() {
                       ))}
                   </div>
 
-                  <div className="mt-4 rounded-2xl bg-slate-900/80 p-3">
+                  <div className="contract-summary mt-4 rounded-2xl bg-slate-900/80 p-3">
                     <p className="text-xs font-bold text-slate-500">
                       {currentContract ? currentContract.name : ui.chooseMode}
                     </p>
@@ -1458,12 +1594,12 @@ export default function App() {
 
                   {currentContract?.id === "tricks-positive" &&
                     !deckGame.trumpLocked && (
-                      <div className="mt-4 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-3">
+                      <div className="trump-panel mt-4 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-3">
                         <p className="text-xs font-black uppercase tracking-widest text-amber-200">
                           {lang === "ge" ? "მთავარი ფერი" : "Main suit"}
                         </p>
 
-                        <div className="mt-3 grid grid-cols-1 gap-2">
+                        <div className="trump-suit-grid mt-3 grid grid-cols-1 gap-2">
                           {SUITS.map((suit) => {
                             const active = deckGame.trumpSuit === suit.id;
                             const disabled =
@@ -1477,6 +1613,7 @@ export default function App() {
                                 onClick={() => chooseTrumpSuit(suit.id)}
                                 className={classNames(
                                   "min-h-[44px] rounded-xl border px-3 py-2 text-left font-black transition",
+                                  "trump-suit-button",
                                   active
                                     ? "border-amber-300 bg-amber-300 text-slate-950"
                                     : "border-white/10 bg-slate-950 text-slate-100 hover:bg-white/10",
@@ -1503,7 +1640,7 @@ export default function App() {
                   {currentContract?.id === "tricks-positive" &&
                     deckGame.trumpLocked &&
                     deckGame.trumpSuit && (
-                      <div className="mt-4 rounded-2xl border border-emerald-300/30 bg-emerald-300/10 p-3">
+                      <div className="locked-trump-panel mt-4 rounded-2xl border border-emerald-300/30 bg-emerald-300/10 p-3">
                         <p className="text-xs font-bold text-emerald-200">
                           {lang === "ge"
                             ? "არჩეული მთავარი ფერი"
@@ -1517,7 +1654,7 @@ export default function App() {
 
                   {seatId === chooser.id &&
                     deckGame.removedCards?.length > 0 && (
-                      <div className="mt-4 rounded-2xl bg-slate-900/80 p-3">
+                      <div className="removed-cards-panel mt-4 rounded-2xl bg-slate-900/80 p-3">
                         <p className="mb-2 text-xs font-bold text-slate-500">
                           {ui.removedCards}
                         </p>
@@ -1536,6 +1673,132 @@ export default function App() {
                 </aside>
               </div>
             </section>
+
+            {showPhoneModePopup &&
+              createPortal(
+                (
+              <div className="phone-choice-overlay" role="dialog" aria-modal="true">
+                <div className="phone-choice-card">
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                        {ui.chooser}: {chooser.name}
+                      </p>
+                      <h2 className="mt-1 text-2xl font-black text-amber-200">
+                        {ui.chooseMode}
+                      </h2>
+                    </div>
+                    {currentContract && (
+                      <p className="rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1 text-xs font-black text-amber-100">
+                        {currentContract.name}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="phone-mode-list">
+                    {contracts.map((contract) => {
+                      const used = (usedContracts[chooser.id] || []).includes(
+                        contract.id,
+                      );
+                      const selected = currentContract?.id === contract.id;
+                      const canChoose = !used;
+
+                      return (
+                        <button
+                          key={contract.id}
+                          disabled={!canChoose}
+                          onClick={() => chooseContract(contract)}
+                          className={classNames(
+                            "phone-mode-option",
+                            selected
+                              ? "border-amber-300 bg-amber-300 text-slate-950"
+                              : "border-white/10 bg-slate-900 text-slate-100",
+                            used && "cursor-not-allowed opacity-35",
+                          )}
+                        >
+                          <span className="font-black">{contract.name}</span>
+                          <span className="text-xs opacity-70">
+                            {used ? ui.alreadyUsed : contract.scoringText}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {currentContract?.id === "tricks-positive" && (
+                    <div className="mt-3 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3">
+                      <p className="text-xs font-black uppercase tracking-widest text-amber-200">
+                        {lang === "ge" ? "მთავარი ფერი" : "Main suit"}
+                      </p>
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        {SUITS.map((suit) => {
+                          const active = deckGame.trumpSuit === suit.id;
+
+                          return (
+                            <button
+                              key={suit.id}
+                              type="button"
+                              onClick={() => chooseTrumpSuit(suit.id)}
+                              className={classNames(
+                                "min-h-[42px] rounded-xl border px-3 text-left text-sm font-black transition",
+                                active
+                                  ? "border-amber-300 bg-amber-300 text-slate-950"
+                                  : "border-white/10 bg-slate-950 text-slate-100",
+                              )}
+                            >
+                              <span
+                                className={
+                                  suit.id === "H" || suit.id === "D"
+                                    ? "text-rose-400"
+                                    : ""
+                                }
+                              >
+                                {suit.label}
+                              </span>{" "}
+                              {lang === "ge" ? suit.namege : suit.nameEn}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={confirmMode}
+                    disabled={!canConfirmMode}
+                    className="mt-3 min-h-[50px] w-full rounded-2xl bg-amber-300 px-4 text-lg font-black text-slate-950 disabled:opacity-50"
+                  >
+                    {lang === "ge" ? "რეჟიმის დადასტურება" : "Confirm mode"}
+                  </button>
+                </div>
+              </div>
+                ),
+                document.body,
+              )}
+
+            {showPhoneRemoveDock &&
+              createPortal(
+                (
+              <div className="phone-remove-dock">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-amber-200">
+                    {ui.remove2}
+                  </p>
+                  <p className="text-sm font-black text-slate-100">
+                    {ui.choose2} ({selectedRemoveCount}/2)
+                  </p>
+                </div>
+                <button
+                  onClick={removeSelectedCards}
+                  disabled={selectedRemoveCount !== 2}
+                  className="min-h-[44px] rounded-2xl bg-amber-300 px-5 font-black text-slate-950 disabled:opacity-50"
+                >
+                  {ui.remove2}
+                </button>
+              </div>
+                ),
+                document.body,
+              )}
           </>
         )}
 

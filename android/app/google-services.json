@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "716700061040",
+    "project_id": "king-game-de3f6",
+    "storage_bucket": "king-game-de3f6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:716700061040:android:386ce230f14d5932c5d3b5",
+        "android_client_info": {
+          "package_name": "com.georgianking.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "716700061040-mos5kjl1sttseatt6f32vg0e4ogjv7gc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.georgianking.app",
+            "certificate_hash": "d1e5a295e2e5c8f8ff26ae1fb4e416fd4ff66730"
+          }
+        },
+        {
+          "client_id": "716700061040-5m75e4osg3daoofobphqimdnt9s2ug00.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFu2fMtAnIeEaEBMjj7JS4SuC0VR6IHRk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "716700061040-5m75e4osg3daoofobphqimdnt9s2ug00.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

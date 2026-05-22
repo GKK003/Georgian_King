@@ -6,9 +6,20 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "icons": "powershell -ExecutionPolicy Bypass -File scripts/generate-icons.ps1",
+    "preview": "vite preview",
+    "android:sync": "npm run build && cap sync android",
+    "android:open": "npm run android:sync && cap open android",
+    "android:run": "npm run android:sync && cap run android",
+    "android:apk": "powershell -ExecutionPolicy Bypass -File scripts/build-android-debug.ps1",
+    "android:sha1": "powershell -ExecutionPolicy Bypass -File scripts/android-signing-report.ps1"
   },
   "dependencies": {
+    "@capacitor-firebase/authentication": "^8.2.0",
+    "@capacitor/android": "^8.3.4",
+    "@capacitor/cli": "^8.3.4",
+    "@capacitor/core": "^8.3.4",
+    "@capacitor/screen-orientation": "^8.0.1",
     "@tailwindcss/vite": "^4.3.0",
     "@vitejs/plugin-react": "latest",
     "firebase": "^12.13.0",

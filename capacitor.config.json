@@ -1,0 +1,11 @@
+{
+  "appId": "com.georgianking.app",
+  "appName": "Georgian King",
+  "webDir": "dist",
+  "plugins": {
+    "FirebaseAuthentication": {
+      "skipNativeAuth": true,
+      "providers": ["google.com"]
+    }
+  }
+}
