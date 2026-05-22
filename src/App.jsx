@@ -120,7 +120,7 @@ export default function App() {
   const [message, setMessage] = useState("");
   const [scoreOpen, setScoreOpen] = useState(false);
 
-  const lang = room?.lang || createLang;
+  const lang = createLang;
   const language = LANGUAGES[lang] || LANGUAGES.en;
   const ui = language.ui;
   const playerCount = room?.playerCount || createCount;
@@ -174,7 +174,7 @@ export default function App() {
               roomCode,
               seatId: seat.id,
               name: seat.name,
-              lang: data.lang || "en",
+              lang: createLang,
             });
           }
         }
@@ -308,7 +308,6 @@ export default function App() {
       };
 
       await setDoc(doc(db, "kingRooms", code), {
-        lang: createLang,
         playerCount: 3,
         players: playersList,
         status: "lobby",
@@ -392,7 +391,7 @@ export default function App() {
         roomCode: code,
         seatId: nextPlayers[seatIndex].id,
         name,
-        lang: data.lang || "en",
+        lang: createLang,
       });
     } catch (error) {
       setPageError(error.message);
@@ -423,10 +422,9 @@ export default function App() {
     });
   }
 
-  async function changeLanguage(nextLang) {
+  function changeLanguage(nextLang) {
     setCreateLang(nextLang);
     saveLocal({ lang: nextLang });
-    if (roomCode) await patchRoom({ lang: nextLang });
   }
 
   function changeCreateLanguage(nextLang) {
@@ -1517,23 +1515,24 @@ export default function App() {
                       </div>
                     )}
 
-                  {deckGame.removedCards?.length > 0 && (
-                    <div className="mt-4 rounded-2xl bg-slate-900/80 p-3">
-                      <p className="mb-2 text-xs font-bold text-slate-500">
-                        {ui.removedCards}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {deckGame.removedCards.map((card) => (
-                          <img
-                            key={card.code}
-                            src={card.image}
-                            alt={card.code}
-                            className="w-10 rounded"
-                          />
-                        ))}
+                  {seatId === chooser.id &&
+                    deckGame.removedCards?.length > 0 && (
+                      <div className="mt-4 rounded-2xl bg-slate-900/80 p-3">
+                        <p className="mb-2 text-xs font-bold text-slate-500">
+                          {ui.removedCards}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {deckGame.removedCards.map((card) => (
+                            <img
+                              key={card.code}
+                              src={card.image}
+                              alt={card.code}
+                              className="w-10 rounded"
+                            />
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </aside>
               </div>
             </section>
