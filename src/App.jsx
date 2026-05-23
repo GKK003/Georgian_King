@@ -1240,7 +1240,7 @@ export default function App() {
                       </div>
                     )}
 
-                  {deckGame.deckId && !deckGame.modeLocked && (
+                  {false && deckGame.deckId && !deckGame.modeLocked && (
                     <div className="mode-list mt-3 space-y-2">
                       {contracts.map((contract) => {
                         const used = (usedContracts[chooser.id] || []).includes(
@@ -1273,7 +1273,8 @@ export default function App() {
                     </div>
                   )}
 
-                  {deckGame.deckId &&
+                  {false &&
+                    deckGame.deckId &&
                     !deckGame.modeLocked &&
                     currentContract &&
                     seatId === chooser.id && (
@@ -1284,6 +1285,17 @@ export default function App() {
                         {lang === "ge" ? "რეჟიმის დადასტურება" : "Confirm mode"}
                       </button>
                     )}
+                  {deckGame.deckId && !deckGame.modeLocked && (
+                    <p className="mt-3 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3 text-sm font-bold text-amber-100">
+                      {seatId === chooser.id
+                        ? lang === "ge"
+                          ? "რეჟიმი აირჩიე popup-იდან."
+                          : "Choose mode from the popup."
+                        : lang === "ge"
+                          ? "ველოდებით ამრჩევს."
+                          : "Waiting for chooser."}
+                    </p>
+                  )}
                 </aside>
 
                 <div className="play-panel order-1 flex min-h-[260px] flex-col justify-between rounded-[2rem] border border-white/10 bg-black/10 p-3 lg:order-2 lg:min-h-[300px]">
@@ -1522,7 +1534,7 @@ export default function App() {
                       </button>
                     )}
 
-                    {mustRemoveCards && seatId === chooser.id && (
+                    {false && mustRemoveCards && seatId === chooser.id && (
                       <button
                         onClick={removeSelectedCards}
                         disabled={selectedRemoveCount !== 2}
@@ -1586,7 +1598,8 @@ export default function App() {
                     </p>
                   </div>
 
-                  {currentContract?.id === "tricks-positive" &&
+                  {false &&
+                    currentContract?.id === "tricks-positive" &&
                     !deckGame.trumpLocked && (
                       <div className="trump-panel mt-4 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-3">
                         <p className="text-xs font-black uppercase tracking-widest text-amber-200">
