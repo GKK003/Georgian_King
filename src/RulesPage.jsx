@@ -19,7 +19,7 @@ const RULES = {
         paragraphs: [
           "The game is played with 3 players. The first deal gives 10 cards to every player. After seeing those 10 cards, the chooser selects the mode.",
           "The chooser can click different modes and think before confirming. The mode is not locked immediately after clicking it. The mode becomes locked only after the chooser confirms the choice.",
-          "If the chooser selects Tricks Positive, the chooser must also choose the main suit before confirming. The main suit can be spades, hearts, diamonds, or clubs. After the chooser confirms the mode and main suit, they cannot be changed.",
+          "If the chooser selects Tricks Positive, the chooser must also choose the main suit before confirming. The main suit can be spades, hearts, diamonds, clubs, or without main suit. After the chooser confirms the mode and main suit choice, they cannot be changed.",
           "Then the chooser receives 2 extra cards and now has 12 cards. After that, the chooser removes 2 cards from those 12 cards, following the remove rules for the selected mode. When the chooser removes 2 cards, the round starts. A round has 10 tricks.",
         ],
       },
@@ -70,21 +70,21 @@ const RULES = {
         heading: "Tricks Positive",
         paragraphs: [
           "In Tricks Positive, the goal is to take as many tricks as possible. This is the only positive mode. There are 10 tricks, and each trick is worth +4 points.",
-          "Before the round starts, the chooser must choose a main suit. The main suit can be spades, hearts, diamonds, or clubs. After the chooser confirms the main suit, it is locked and cannot be changed. After the main suit is locked, the chooser receives 2 extra cards and then removes any 2 cards.",
+          "Before the round starts, the chooser must choose a main suit option. The options are spades, hearts, diamonds, clubs, or without main suit. After the chooser confirms the main suit option, it is locked and cannot be changed. After the main suit option is locked, the chooser receives 2 extra cards and then removes any 2 cards.",
         ],
       },
       {
         heading: "Playing a Trick",
         paragraphs: [
           "During play, the first card of a trick decides the suit that must be followed. If the first player plays spades and you have spades, you must play spades. If you do not have the suit that was led, you can play another suit.",
-          "In Tricks Positive only, there is an extra rule: if you do not have the suit that was led, but you have the main suit, you must play the main suit. For example, if the main suit is hearts and the first player plays spades, then a player with spades must play spades. A player with no spades but with hearts must play hearts. A player with no spades and no hearts can play any card.",
+          "In Tricks Positive only, there is an extra rule when a main suit is selected: if you do not have the suit that was led, but you have the main suit, you must play the main suit. For example, if the main suit is hearts and the first player plays spades, then a player with spades must play spades. A player with no spades but with hearts must play hearts. A player with no spades and no hearts can play any card. If without main suit is selected, this extra rule does not apply.",
         ],
       },
       {
         heading: "Winning Tricks and Game End",
         paragraphs: [
           "The winner of a trick is normally the player who played the highest card of the suit that was led. For example, if the first card is 9♠ and the other spades played are K♠ and 7♠, then K♠ wins the trick.",
-          "In Tricks Positive, the main suit acts like the strongest suit. If any main-suit card is played in the trick, the highest main-suit card wins the trick.",
+          "In Tricks Positive, when a main suit is selected, the main suit acts like the strongest suit. If any main-suit card is played in the trick, the highest main-suit card wins the trick. If without main suit is selected, the trick is won normally by the highest card of the suit that was led.",
           "The game continues until every player has chosen every mode once. When all rounds are finished, the player with the highest total score wins the game.",
         ],
       },
@@ -107,7 +107,7 @@ const RULES = {
         paragraphs: [
           "თამაში ითამაშება 3 მოთამაშით. თავდაპირველად ყველა მოთამაშეს ურიგდება 10 კარტი. ამ 10 კარტის ნახვის შემდეგ ამრჩევი ირჩევს რეჟიმს.",
           "ამრჩევს შეუძლია დააჭიროს სხვადასხვა რეჟიმს და დაფიქრდეს, სანამ საბოლოოდ დაადასტურებს არჩევანს. რეჟიმი არ იკეტება მხოლოდ დაჭერის შემდეგ. რეჟიმი იკეტება მხოლოდ მაშინ, როცა ამრჩევი დაადასტურებს არჩევანს.",
-          "თუ ამრჩევი აირჩევს „კარტის აღება“ რეჟიმს, მან ასევე უნდა აირჩიოს კოზირი დადასტურებამდე. კოზირი შეიძლება იყოს ყვავი, გული, აგური ან ჯვარი. რეჟიმისა და კოზირის დადასტურების შემდეგ მათი შეცვლა აღარ შეიძლება.",
+          "თუ ამრჩევი აირჩევს „კარტის აღება“ რეჟიმს, მან ასევე უნდა აირჩიოს კოზირის ვარიანტი დადასტურებამდე. კოზირი შეიძლება იყოს ყვავი, გული, აგური, ჯვარი ან კოზირის გარეშე. რეჟიმისა და კოზირის ვარიანტის დადასტურების შემდეგ მათი შეცვლა აღარ შეიძლება.",
           "ამის შემდეგ ამრჩევი იღებს დამატებით 2 კარტს და უკვე აქვს 12 კარტი. შემდეგ ამრჩევი ამ 12 კარტიდან აგდებს 2 კარტს, 2 კარტის ამოღების შემდეგ იწყება რაუნდი. რაუნდში არის 10 აღება.",
         ],
       },
@@ -158,21 +158,21 @@ const RULES = {
         heading: "კარტის აღება",
         paragraphs: [
           "„კარტის აღება“ რეჟიმში მიზანია რაც შეიძლება მეტი კარტის აღება. ეს არის ერთადერთი პლიუს რეჟიმი. რაუნდში არის 10 აღება და თითოეული აღება არის +4 ქულა.",
-          "რაუნდის დაწყებამდე ამრჩევმა უნდა აირჩიოს კოზირი. კოზირი შეიძლება იყოს ყვავი, გული, აგური ან ჯვარი. კოზირის დადასტურების შემდეგ ის იკეტება და მისი შეცვლა აღარ შეიძლება. კოზირის დაბლოკვის შემდეგ ამრჩევი იღებს დამატებით 2 კარტს და შემდეგ აგდებს ნებისმიერ 2 კარტს.",
+          "რაუნდის დაწყებამდე ამრჩევმა უნდა აირჩიოს კოზირის ვარიანტი. ვარიანტებია ყვავი, გული, აგური, ჯვარი ან კოზირის გარეშე. კოზირის ვარიანტის დადასტურების შემდეგ ის იკეტება და მისი შეცვლა აღარ შეიძლება. კოზირის ვარიანტის დაბლოკვის შემდეგ ამრჩევი იღებს დამატებით 2 კარტს და შემდეგ აგდებს ნებისმიერ 2 კარტს.",
         ],
       },
       {
         heading: "კარტის ჩამოსვლა",
         paragraphs: [
           "თამაშის დროს,  პირველი კარტი განსაზღვრავს ფერს, რომელსაც მოთამაშეებმა უნდა მიჰყვნენ. თუ პირველმა მოთამაშემ ჩავიდა ყვავი და შენ გაქვს ყვავი, აუცილებლად უნდა ჩახვიდე ყვავი. თუ არ გაქვს ის ფერი, რომელიც პირველმა მოთამაშემ ჩავიდა, შეგიძლია სხვა ფერი ჩახვიდე.",
-          "მხოლოდ „კარტის აღება“ რეჟიმში მოქმედებს დამატებითი წესი: თუ არ გაქვს ის ფერი, რომელიც პირველმა მოთამაშემ ჩავიდა, მაგრამ გაქვს კოზირი, აუცილებლად უნდა ჩახვიდე კოზირი. მაგალითად, თუ კოზირია გული და პირველმა მოთამაშემ ჩავიდა ყვავი, მაშინ მოთამაშე, რომელსაც აქვს ყვავი, ვალდებულია ჩავიდეს ყვავი. ამ შემთხვევაში მოთამაშე, რომელსაც არც ყვავი აქვს და არც გული, შეუძლია ჩავიდეს ნებისმიერი კარტი.",
+          "მხოლოდ „კარტის აღება“ რეჟიმში მოქმედებს დამატებითი წესი, როცა კოზირი არჩეულია: თუ არ გაქვს ის ფერი, რომელიც პირველმა მოთამაშემ ჩავიდა, მაგრამ გაქვს კოზირი, აუცილებლად უნდა ჩახვიდე კოზირი. მაგალითად, თუ კოზირია გული და პირველმა მოთამაშემ ჩავიდა ყვავი, მაშინ მოთამაშე, რომელსაც აქვს ყვავი, ვალდებულია ჩავიდეს ყვავი. ამ შემთხვევაში მოთამაშე, რომელსაც არც ყვავი აქვს და არც გული, შეუძლია ჩავიდეს ნებისმიერი კარტი. თუ არჩეულია კოზირის გარეშე, ეს დამატებითი წესი არ მოქმედებს.",
         ],
       },
       {
         heading: "რიგების მოგება და თამაშის დასრულება",
         paragraphs: [
           "ჩვეულებრივ, რიგებას იგებს ის მოთამაშე, რომელმაც ჩასული ფერიდან ყველაზე მაღალი კარტი ჩავიდა. მაგალითად, თუ პირველი კარტი არის 9♠ და სხვა ჩასული ყვავებია K♠ და 7♠, მაშინ K♠ იგებს აღებას.",
-          "„კარტის აღება“ რეჟიმში კოზირი ყველაზე ძლიერ ფერად ითვლება. თუ აღებაში კოზირის რომელიმე კარტი ჩავიდა, მაშინ აღებას იგებს კოზირის ყველაზე მაღალი კარტი.",
+          "„კარტის აღება“ რეჟიმში, როცა კოზირი არჩეულია, კოზირი ყველაზე ძლიერ ფერად ითვლება. თუ აღებაში კოზირის რომელიმე კარტი ჩავიდა, მაშინ აღებას იგებს კოზირის ყველაზე მაღალი კარტი. თუ არჩეულია კოზირის გარეშე, აღებას ჩვეულებრივ იგებს პირველ ჩასულ ფერში ყველაზე მაღალი კარტი.",
           "თამაში გრძელდება მანამ, სანამ ყველა მოთამაშე ყველა რეჟიმს ერთხელ არ აირჩევს. როცა ყველა რაუნდი დასრულდება, თამაშს იგებს ის მოთამაშე, ვისაც ყველაზე მაღალი ჯამური ქულა აქვს.",
         ],
       },

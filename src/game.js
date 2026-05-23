@@ -40,6 +40,18 @@ export const SUITS = [
   { id: "C", label: "♣", nameEn: "Clubs", nameGe: "ჯვარი" },
 ];
 
+export const NO_TRUMP_SUIT = "NONE";
+
+export const TRUMP_OPTIONS = [
+  ...SUITS,
+  {
+    id: NO_TRUMP_SUIT,
+    label: "—",
+    nameEn: "Without main suit",
+    nameGe: "კოზირის გარეშე",
+  },
+];
+
 export const emptyDeckGame = {
   deckId: "",
   hands: {},
@@ -153,9 +165,11 @@ export function canPlayCard({
     return { ok: false, errorType: "mustFollowSuit" };
   }
 
+  const hasTrumpSuit = trumpSuit && trumpSuit !== NO_TRUMP_SUIT;
+
   if (
     contractId === "tricks-positive" &&
-    trumpSuit &&
+    hasTrumpSuit &&
     !hasSuit(hand, ledSuit) &&
     hasSuit(hand, trumpSuit) &&
     cardSuit !== trumpSuit
@@ -170,8 +184,9 @@ export function getTrickWinner(tableCards, trumpSuit = "") {
   if (!tableCards.length) return "";
 
   const ledSuit = getSuit(tableCards[0].card);
+  const hasTrumpSuit = trumpSuit && trumpSuit !== NO_TRUMP_SUIT;
 
-  const trumpCards = trumpSuit
+  const trumpCards = hasTrumpSuit
     ? tableCards.filter((item) => getSuit(item.card) === trumpSuit)
     : [];
 

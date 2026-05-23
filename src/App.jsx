@@ -26,7 +26,7 @@ import AuthPage from "./AuthPage";
 import RulesPage from "./RulesPage";
 import {
   KING_DECK_CODES,
-  SUITS,
+  TRUMP_OPTIONS,
   emptyDeckGame,
   createTaken,
   canPlayCard,
@@ -108,9 +108,9 @@ function clearLocal() {
 }
 
 function suitName(suit, lang) {
-  const found = SUITS.find((item) => item.id === suit);
+  const found = TRUMP_OPTIONS.find((item) => item.id === suit);
   if (!found) return "";
-  return lang === "ge" ? found.namege : found.nameEn;
+  return lang === "ge" ? found.nameGe : found.nameEn;
 }
 
 export default function App() {
@@ -596,7 +596,9 @@ export default function App() {
 
     if (currentContract.id === "tricks-positive" && !deckGame.trumpSuit) {
       setPageError(
-        lang === "ge" ? "აირჩიე მთავარი ფერი." : "Choose main suit.",
+        lang === "ge"
+          ? "აირჩიე კოზირი ან კოზირის გარეშე."
+          : "Choose a main suit or without main suit.",
       );
       return;
     }
@@ -763,7 +765,7 @@ export default function App() {
       const customErrors = {
         mustPlayTrump:
           lang === "ge"
-            ? "ფერი არ გაქვს, მაგრამ მთავარი ფერი გაქვს, ამიტომ მთავარი ფერი უნდა ჩახვიდე."
+            ? "ფერი არ გაქვს, მაგრამ კოზირი გაქვს, ამიტომ კოზირი უნდა ჩახვიდე."
             : "You do not have the led suit, but you have main suit, so you must play main suit.",
       };
 
@@ -1233,7 +1235,7 @@ export default function App() {
                         {currentContract.id === "tricks-positive" &&
                           deckGame.trumpSuit && (
                             <p className="mt-1 text-xs font-bold text-emerald-300">
-                              {lang === "ge" ? "მთავარი ფერი" : "Main suit"}:{" "}
+                              {lang === "ge" ? "კოზირი" : "Main suit"}:{" "}
                               {suitName(deckGame.trumpSuit, lang)}
                             </p>
                           )}
@@ -1603,11 +1605,11 @@ export default function App() {
                     !deckGame.trumpLocked && (
                       <div className="trump-panel mt-4 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-3">
                         <p className="text-xs font-black uppercase tracking-widest text-amber-200">
-                          {lang === "ge" ? "მთავარი ფერი" : "Main suit"}
+                          {lang === "ge" ? "კოზირი" : "Main suit"}
                         </p>
 
                         <div className="trump-suit-grid mt-3 grid grid-cols-1 gap-2">
-                          {SUITS.map((suit) => {
+                          {TRUMP_OPTIONS.map((suit) => {
                             const active = deckGame.trumpSuit === suit.id;
                             const disabled =
                               seatId !== chooser.id || deckGame.trumpLocked;
@@ -1636,7 +1638,7 @@ export default function App() {
                                 >
                                   {suit.label}
                                 </span>{" "}
-                                {lang === "ge" ? suit.namege : suit.nameEn}
+                                {lang === "ge" ? suit.nameGe : suit.nameEn}
                               </button>
                             );
                           })}
@@ -1650,7 +1652,7 @@ export default function App() {
                       <div className="locked-trump-panel mt-4 rounded-2xl border border-emerald-300/30 bg-emerald-300/10 p-3">
                         <p className="text-xs font-bold text-emerald-200">
                           {lang === "ge"
-                            ? "არჩეული მთავარი ფერი"
+                            ? "არჩეული კოზირი"
                             : "Locked main suit"}
                         </p>
                         <p className="mt-1 text-lg font-black text-emerald-300">
@@ -1735,10 +1737,10 @@ export default function App() {
                   {currentContract?.id === "tricks-positive" && (
                     <div className="mt-3 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3">
                       <p className="text-xs font-black uppercase tracking-widest text-amber-200">
-                        {lang === "ge" ? "მთავარი ფერი" : "Main suit"}
+                        {lang === "ge" ? "კოზირი" : "Main suit"}
                       </p>
                       <div className="mt-2 grid grid-cols-2 gap-2">
-                        {SUITS.map((suit) => {
+                        {TRUMP_OPTIONS.map((suit) => {
                           const active = deckGame.trumpSuit === suit.id;
 
                           return (
@@ -1762,7 +1764,7 @@ export default function App() {
                               >
                                 {suit.label}
                               </span>{" "}
-                              {lang === "ge" ? suit.namege : suit.nameEn}
+                              {lang === "ge" ? suit.nameGe : suit.nameEn}
                             </button>
                           );
                         })}
