@@ -276,12 +276,6 @@ export default function App() {
     if (!phoneChoiceOpen) return;
     if (typeof window === "undefined") return;
 
-    const isPhoneLandscape = window.matchMedia(
-      "(orientation: landscape) and (max-width: 1024px)",
-    ).matches;
-
-    if (!isPhoneLandscape) return;
-
     const previousBodyOverflow = document.body.style.overflow;
     const previousHtmlOverflow = document.documentElement.style.overflow;
 
