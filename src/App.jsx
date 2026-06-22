@@ -11,6 +11,7 @@ import {
 import { Capacitor } from "@capacitor/core";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { ScreenOrientation } from "@capacitor/screen-orientation";
+import confetti from "canvas-confetti";
 import {
   doc,
   getDoc,
@@ -131,6 +132,7 @@ export default function App() {
   const [pageError, setPageError] = useState("");
   const [message, setMessage] = useState("");
   const [scoreOpen, setScoreOpen] = useState(false);
+  const [rankingOpen, setRankingOpen] = useState(false);
 
   const lang = createLang;
   const language = LANGUAGES[lang] || LANGUAGES.en;
@@ -273,7 +275,7 @@ export default function App() {
   }, [location.pathname, gameStatus]);
 
   useEffect(() => {
-    if (!phoneChoiceOpen) return;
+    if (!phoneChoiceOpen && !rankingOpen) return;
     if (typeof window === "undefined") return;
 
     const previousBodyOverflow = document.body.style.overflow;
@@ -289,7 +291,65 @@ export default function App() {
       document.body.style.overflow = previousBodyOverflow;
       document.documentElement.style.overflow = previousHtmlOverflow;
     };
-  }, [phoneChoiceOpen]);
+  }, [phoneChoiceOpen, rankingOpen]);
+
+  useEffect(() => {
+    setRankingOpen(gameFinished);
+  }, [gameFinished]);
+
+  useEffect(() => {
+    if (!gameFinished || !rankingOpen) return;
+
+    const colors = ["#fbbf24", "#f8fafc", "#ef4444", "#22c55e"];
+    const defaults = {
+      colors,
+      disableForReducedMotion: true,
+      scalar: 0.9,
+      ticks: 80,
+      zIndex: 90,
+    };
+
+    function launchFireworks() {
+      confetti({
+        ...defaults,
+        angle: 65,
+        origin: { x: 0.08, y: 0.82 },
+        particleCount: 38,
+        spread: 65,
+        startVelocity: 52,
+      });
+      confetti({
+        ...defaults,
+        angle: 115,
+        origin: { x: 0.92, y: 0.82 },
+        particleCount: 38,
+        spread: 65,
+        startVelocity: 52,
+      });
+      confetti({
+        ...defaults,
+        origin: {
+          x: 0.2 + Math.random() * 0.6,
+          y: 0.16 + Math.random() * 0.24,
+        },
+        particleCount: 28,
+        spread: 360,
+        startVelocity: 34,
+      });
+    }
+
+    launchFireworks();
+    const intervalId = window.setInterval(launchFireworks, 700);
+    const timeoutId = window.setTimeout(
+      () => window.clearInterval(intervalId),
+      4200,
+    );
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [gameFinished, rankingOpen]);
 
   const totals = useMemo(() => {
     const result = {};
@@ -305,6 +365,14 @@ export default function App() {
 
     return result;
   }, [players, history]);
+
+  const rankings = useMemo(
+    () =>
+      [...players].sort(
+        (a, b) => (totals[b.id] || 0) - (totals[a.id] || 0),
+      ),
+    [players, totals],
+  );
 
   const chooserProgress = useMemo(() => {
     const result = {};
@@ -1565,6 +1633,15 @@ export default function App() {
                         {ui.roundDone}
                       </button>
                     )}
+
+                    {gameFinished && !rankingOpen && (
+                      <button
+                        onClick={() => setRankingOpen(true)}
+                        className="min-h-[52px] rounded-2xl border border-amber-300/40 bg-amber-300/10 px-6 font-black text-amber-100 hover:bg-amber-300/20"
+                      >
+                        {ui.finalRanking}
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -1841,6 +1918,83 @@ export default function App() {
               )}
           </>
         )}
+
+        {rankingOpen &&
+          gameFinished &&
+          createPortal(
+            <div
+              className="final-results-overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="final-results-title"
+            >
+              <section className="final-results-dialog">
+                <button
+                  type="button"
+                  onClick={() => setRankingOpen(false)}
+                  className="final-results-close"
+                  aria-label={ui.close}
+                >
+                  ×
+                </button>
+
+                <p className="final-results-kicker">{ui.gameFinished}</p>
+                <p className="final-results-winner-label">{ui.winner}</p>
+                <h2 id="final-results-title" className="final-results-winner">
+                  {rankings[0]?.name || "—"}
+                </h2>
+                <p className="final-results-winner-score">
+                  {ui.totalScore}: {totals[rankings[0]?.id] || 0}
+                </p>
+
+                <div
+                  className="final-ranking-list"
+                  aria-label={ui.finalRanking}
+                >
+                  {rankings.map((player, index) => {
+                    const score = totals[player.id] || 0;
+
+                    return (
+                      <div
+                        key={player.id}
+                        className={classNames(
+                          "final-ranking-row",
+                          index === 0 && "final-ranking-row-winner",
+                        )}
+                      >
+                        <span className="final-ranking-position">
+                          {index + 1}
+                        </span>
+                        <span className="final-ranking-name">
+                          {player.name}
+                          {player.id === seatId ? ` (${ui.you})` : ""}
+                        </span>
+                        <span
+                          className={classNames(
+                            "final-ranking-score",
+                            score >= 0
+                              ? "text-emerald-300"
+                              : "text-rose-300",
+                          )}
+                        >
+                          {score}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setRankingOpen(false)}
+                  className="final-results-dismiss"
+                >
+                  {ui.close}
+                </button>
+              </section>
+            </div>,
+            document.body,
+          )}
 
         {scoreOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
