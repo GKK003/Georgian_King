@@ -808,7 +808,12 @@ export default function App() {
     });
 
     const currentTrickNumber = deckGame.trickNumber || 1;
-    const isRoundOver = currentTrickNumber >= (deckGame.maxTricks || 10);
+    const kingOfHeartsTaken =
+      currentContract.id === "no-king-heart" &&
+      nextTableCards.some((item) => item.card.code === "KH");
+    const isRoundOver =
+      kingOfHeartsTaken ||
+      currentTrickNumber >= (deckGame.maxTricks || 10);
 
     await patchRoom({
       deckGame: {

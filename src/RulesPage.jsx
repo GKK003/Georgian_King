@@ -20,7 +20,7 @@ const RULES = {
           "The game is played with 3 players. The first deal gives 10 cards to every player. After seeing those 10 cards, the chooser selects the mode.",
           "The chooser can click different modes and think before confirming. The mode is not locked immediately after clicking it. The mode becomes locked only after the chooser confirms the choice.",
           "If the chooser selects Tricks Positive, the chooser must also choose the main suit before confirming. The main suit can be spades, hearts, diamonds, clubs, or without main suit. After the chooser confirms the mode and main suit choice, they cannot be changed.",
-          "Then the chooser receives 2 extra cards and now has 12 cards. After that, the chooser removes 2 cards from those 12 cards, following the remove rules for the selected mode. When the chooser removes 2 cards, the round starts. A round has 10 tricks.",
+          "Then the chooser receives 2 extra cards and now has 12 cards. After that, the chooser removes 2 cards from those 12 cards, following the remove rules for the selected mode. When the chooser removes 2 cards, the round starts. A round normally has 10 tricks; No King of Hearts ends earlier when K♥ is taken.",
         ],
       },
       {
@@ -63,7 +63,7 @@ const RULES = {
       {
         heading: "No King of Hearts",
         paragraphs: [
-          "In No King of Hearts, the goal is to avoid taking K♥. The King of Hearts is worth -40 points. In No King of Hearts, the chooser cannot remove hearts. Because of that, K♥ also cannot be removed. The cards A♥, K♥, Q♥, J♥, 10♥, 9♥, 8♥, and 7♥ cannot be removed.",
+          "In No King of Hearts, the goal is to avoid taking K♥. The King of Hearts is worth -40 points, and the round ends immediately after K♥ is taken. In No King of Hearts, the chooser cannot remove hearts. Because of that, K♥ also cannot be removed. The cards A♥, K♥, Q♥, J♥, 10♥, 9♥, 8♥, and 7♥ cannot be removed.",
         ],
       },
       {
@@ -108,7 +108,7 @@ const RULES = {
           "თამაში ითამაშება 3 მოთამაშით. თავდაპირველად ყველა მოთამაშეს ურიგდება 10 კარტი. ამ 10 კარტის ნახვის შემდეგ ამრჩევი ირჩევს რეჟიმს.",
           "ამრჩევს შეუძლია დააჭიროს სხვადასხვა რეჟიმს და დაფიქრდეს, სანამ საბოლოოდ დაადასტურებს არჩევანს. რეჟიმი არ იკეტება მხოლოდ დაჭერის შემდეგ. რეჟიმი იკეტება მხოლოდ მაშინ, როცა ამრჩევი დაადასტურებს არჩევანს.",
           "თუ ამრჩევი აირჩევს „კარტის აღება“ რეჟიმს, მან ასევე უნდა აირჩიოს კოზირის ვარიანტი დადასტურებამდე. კოზირი შეიძლება იყოს ყვავი, გული, აგური, ჯვარი ან კოზირის გარეშე. რეჟიმისა და კოზირის ვარიანტის დადასტურების შემდეგ მათი შეცვლა აღარ შეიძლება.",
-          "ამის შემდეგ ამრჩევი იღებს დამატებით 2 კარტს და უკვე აქვს 12 კარტი. შემდეგ ამრჩევი ამ 12 კარტიდან აგდებს 2 კარტს, 2 კარტის ამოღების შემდეგ იწყება რაუნდი. რაუნდში არის 10 აღება.",
+          "ამის შემდეგ ამრჩევი იღებს დამატებით 2 კარტს და უკვე აქვს 12 კარტი. შემდეგ ამრჩევი ამ 12 კარტიდან აგდებს 2 კარტს, 2 კარტის ამოღების შემდეგ იწყება რაუნდი. რაუნდში ჩვეულებრივ არის 10 აღება; „არ აიღო გულის კინგი“ რეჟიმი K♥-ის აღებისთანავე სრულდება.",
         ],
       },
       {
@@ -151,7 +151,7 @@ const RULES = {
       {
         heading: "არ აიღო გულის კინგი(კაროლი)",
         paragraphs: [
-          "„არ აიღო გულის კინგი“ რეჟიმში მიზანია არ აიღო K♥. გულის მეფე არის -40 ქულა. ამ რეჟიმში ამრჩევს არ შეუძლია გულის კარტების ამოღება. A♥, K♥, Q♥, J♥, 10♥, 9♥, 8♥ და 7♥ ვერ იქნება ამოღებული.",
+          "„არ აიღო გულის კინგი“ რეჟიმში მიზანია არ აიღო K♥. გულის მეფე არის -40 ქულა და K♥-ის აღებისთანავე რაუნდი სრულდება. ამ რეჟიმში ამრჩევს არ შეუძლია გულის კარტების ამოღება. A♥, K♥, Q♥, J♥, 10♥, 9♥, 8♥ და 7♥ ვერ იქნება ამოღებული.",
         ],
       },
       {
