@@ -1465,7 +1465,7 @@ export default function App() {
                             className="hand-scroll w-full items-end justify-center overflow-x-hidden overflow-y-visible pb-2 pt-6"
                             style={{
                               "--hand-count": myHand.length,
-                              "--hand-max-width": `${myHand.length * 78}px`,
+                              "--hand-max-width": `${myHand.length * 88}px`,
                             }}
                           >
                             {myHand.map((card) => {
@@ -1503,7 +1503,7 @@ export default function App() {
                                   className={classNames(
                                     "card-button card-fan shrink-0 rounded-xl border p-1 transition duration-150",
                                     selected
-                                      ? "-translate-y-3 border-amber-300 bg-amber-300/20"
+                                      ? "hand-card-selected -translate-y-3 border-amber-300 bg-amber-300/20"
                                       : "border-transparent",
                                     protectedRemove &&
                                       "cursor-not-allowed opacity-45 grayscale",
@@ -1720,7 +1720,7 @@ export default function App() {
                       className="choice-hand-preview"
                       style={{
                         "--choice-hand-count": myHand.length,
-                        "--choice-hand-max-width": `${myHand.length * 60}px`,
+                        "--choice-hand-max-width": `${myHand.length * 76}px`,
                       }}
                       aria-label={`${myHand.length} ${ui.cards}`}
                     >

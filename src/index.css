@@ -53,21 +53,29 @@ select {
   align-items: end;
   overflow-x: hidden;
   overflow-y: visible;
+  padding-inline: clamp(10px, 2vw, 18px);
 }
 
 .hand-scroll .card-button {
-  width: 100%;
-  max-width: 78px;
+  position: relative;
+  width: clamp(76px, 8vw, 88px);
+  max-width: 88px;
   min-width: 0;
   margin-left: 0;
   padding: clamp(1px, 0.35vw, 4px);
   border-radius: clamp(6px, 1.4vw, 12px);
 }
 
+.hand-scroll .card-button:hover,
+.hand-scroll .card-button:focus-visible,
+.hand-scroll .hand-card-selected {
+  z-index: 10;
+}
+
 .hand-scroll .playing-card-img {
   display: block;
   width: 100%;
-  max-width: 74px;
+  max-width: 84px;
   min-width: 0;
   height: auto;
 }
@@ -135,12 +143,14 @@ select {
   align-items: end;
   justify-items: center;
   overflow: hidden;
+  padding-inline: 10px;
 }
 
 .choice-hand-card {
   display: block;
-  width: 100%;
-  max-width: 56px;
+  position: relative;
+  width: clamp(64px, 7vw, 76px);
+  max-width: 76px;
   min-width: 0;
   height: auto;
   border-radius: 6px;
@@ -251,7 +261,8 @@ select {
   }
 
   .choice-hand-card {
-    max-width: 48px;
+    width: clamp(60px, 9vw, 68px);
+    max-width: 68px;
   }
 
   .phone-mode-list {
