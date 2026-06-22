@@ -39,7 +39,7 @@ import {
 } from "./game";
 
 const LOCAL_KEY = "king-online-modern-user";
-const AUTO_NEXT_TRICK_DELAY_MS = 300;
+const AUTO_NEXT_TRICK_DELAY_MS = 1500;
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -1456,7 +1456,13 @@ export default function App() {
                             {ui.noCards}
                           </p>
                         ) : (
-                          <div className="hand-scroll flex w-full items-end justify-center overflow-x-auto overflow-y-visible pb-2 pt-6">
+                          <div
+                            className="hand-scroll w-full items-end justify-center overflow-x-hidden overflow-y-visible pb-2 pt-6"
+                            style={{
+                              "--hand-count": myHand.length,
+                              "--hand-max-width": `${myHand.length * 78}px`,
+                            }}
+                          >
                             {myHand.map((card) => {
                               const selected = (
                                 deckGame.selectedToRemove || []
@@ -1703,6 +1709,26 @@ export default function App() {
                       </p>
                     )}
                   </div>
+
+                  {myHand.length > 0 && (
+                    <div
+                      className="choice-hand-preview"
+                      style={{
+                        "--choice-hand-count": myHand.length,
+                        "--choice-hand-max-width": `${myHand.length * 60}px`,
+                      }}
+                      aria-label={`${myHand.length} ${ui.cards}`}
+                    >
+                      {myHand.map((card) => (
+                        <img
+                          key={card.code}
+                          src={card.image}
+                          alt={card.code}
+                          className="choice-hand-card"
+                        />
+                      ))}
+                    </div>
+                  )}
 
                   <div className="phone-mode-list">
                     {contracts.map((contract) => {

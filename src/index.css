@@ -43,6 +43,35 @@ select {
   width: 62px;
 }
 
+.hand-scroll {
+  display: grid;
+  grid-template-columns: repeat(var(--hand-count, 1), minmax(0, 1fr));
+  width: min(100%, var(--hand-max-width, 936px));
+  max-width: 100%;
+  gap: clamp(1px, 0.55vw, 6px);
+  justify-items: center;
+  align-items: end;
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+
+.hand-scroll .card-button {
+  width: 100%;
+  max-width: 78px;
+  min-width: 0;
+  margin-left: 0;
+  padding: clamp(1px, 0.35vw, 4px);
+  border-radius: clamp(6px, 1.4vw, 12px);
+}
+
+.hand-scroll .playing-card-img {
+  display: block;
+  width: 100%;
+  max-width: 74px;
+  min-width: 0;
+  height: auto;
+}
+
 @media (min-width: 640px) {
   .playing-card-img {
     width: 74px;
@@ -91,6 +120,31 @@ select {
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
+}
+
+.choice-hand-preview {
+  display: grid;
+  grid-template-columns: repeat(
+    var(--choice-hand-count, 1),
+    minmax(0, 1fr)
+  );
+  width: min(100%, var(--choice-hand-max-width, 600px));
+  max-width: 100%;
+  margin: 0 auto 12px;
+  gap: clamp(1px, 0.45vw, 5px);
+  align-items: end;
+  justify-items: center;
+  overflow: hidden;
+}
+
+.choice-hand-card {
+  display: block;
+  width: 100%;
+  max-width: 56px;
+  min-width: 0;
+  height: auto;
+  border-radius: 6px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
 }
 
 .phone-mode-list {
@@ -175,7 +229,7 @@ select {
   }
 
   .phone-game-shell .hand-scroll {
-    overflow-x: auto;
+    overflow-x: hidden;
     justify-content: center;
   }
 
@@ -190,6 +244,14 @@ select {
   .phone-choice-card {
     max-height: calc(100svh - 20px);
     padding: 12px;
+  }
+
+  .choice-hand-preview {
+    margin-bottom: 8px;
+  }
+
+  .choice-hand-card {
+    max-width: 48px;
   }
 
   .phone-mode-list {
