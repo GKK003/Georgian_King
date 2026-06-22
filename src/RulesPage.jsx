@@ -81,6 +81,12 @@ const RULES = {
         ],
       },
       {
+        heading: "20-Second Timer",
+        paragraphs: [
+          "The chooser has 20 seconds to choose and confirm a mode, followed by 20 seconds to remove 2 legal cards. Every player also has 20 seconds to play a card on their turn. If time expires, the game automatically completes the required action with a valid choice. If Tricks Positive was selected without a confirmed main suit, the automatic choice is Without main suit.",
+        ],
+      },
+      {
         heading: "Winning Tricks and Game End",
         paragraphs: [
           "The winner of a trick is normally the player who played the highest card of the suit that was led. For example, if the first card is 9♠ and the other spades played are K♠ and 7♠, then K♠ wins the trick.",
@@ -166,6 +172,12 @@ const RULES = {
         paragraphs: [
           "თამაშის დროს,  პირველი კარტი განსაზღვრავს ფერს, რომელსაც მოთამაშეებმა უნდა მიჰყვნენ. თუ პირველმა მოთამაშემ ჩავიდა ყვავი და შენ გაქვს ყვავი, აუცილებლად უნდა ჩახვიდე ყვავი. თუ არ გაქვს ის ფერი, რომელიც პირველმა მოთამაშემ ჩავიდა, შეგიძლია სხვა ფერი ჩახვიდე.",
           "მხოლოდ „კარტის აღება“ რეჟიმში მოქმედებს დამატებითი წესი, როცა კოზირი არჩეულია: თუ არ გაქვს ის ფერი, რომელიც პირველმა მოთამაშემ ჩავიდა, მაგრამ გაქვს კოზირი, აუცილებლად უნდა ჩახვიდე კოზირი. მაგალითად, თუ კოზირია გული და პირველმა მოთამაშემ ჩავიდა ყვავი, მაშინ მოთამაშე, რომელსაც აქვს ყვავი, ვალდებულია ჩავიდეს ყვავი. ამ შემთხვევაში მოთამაშე, რომელსაც არც ყვავი აქვს და არც გული, შეუძლია ჩავიდეს ნებისმიერი კარტი. თუ არჩეულია კოზირის გარეშე, ეს დამატებითი წესი არ მოქმედებს.",
+        ],
+      },
+      {
+        heading: "20-წამიანი ტაიმერი",
+        paragraphs: [
+          "ამრჩევს რეჟიმის არჩევისა და დადასტურებისთვის აქვს 20 წამი, შემდეგ კი 2 დასაშვები კარტის ამოსაღებად კიდევ 20 წამი. თითოეულ მოთამაშეს კარტის ჩამოსასვლელად ასევე აქვს 20 წამი. დროის ამოწურვისას თამაში საჭირო მოქმედებას ავტომატურად ასრულებს დასაშვები არჩევანით. თუ არჩეულია „კარტის აღება“ და კოზირი დადასტურებული არ არის, ავტომატურად აირჩევა კოზირის გარეშე.",
         ],
       },
       {

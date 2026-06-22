@@ -70,6 +70,7 @@ export const emptyDeckGame = {
   trumpSuit: "",
   trumpLocked: false,
   modeLocked: false,
+  actionDeadline: 0,
 };
 
 const rankPower = {

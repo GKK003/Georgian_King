@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Link,
@@ -27,6 +27,7 @@ import AuthPage from "./AuthPage";
 import RulesPage from "./RulesPage";
 import {
   KING_DECK_CODES,
+  NO_TRUMP_SUIT,
   TRUMP_OPTIONS,
   emptyDeckGame,
   createTaken,
@@ -41,6 +42,12 @@ import {
 
 const LOCAL_KEY = "king-online-modern-user";
 const AUTO_NEXT_TRICK_DELAY_MS = 1500;
+const ACTION_TIME_SECONDS = 20;
+const ACTION_TIME_MS = ACTION_TIME_SECONDS * 1000;
+
+function nextActionDeadline() {
+  return Date.now() + ACTION_TIME_MS;
+}
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -114,6 +121,23 @@ function suitName(suit, lang) {
   return lang === "ge" ? found.nameGe : found.nameEn;
 }
 
+function TimerBadge({ seconds }) {
+  const safeSeconds = Math.max(0, Math.min(ACTION_TIME_SECONDS, seconds));
+
+  return (
+    <span
+      className={classNames(
+        "turn-timer-badge",
+        safeSeconds <= 5 && "turn-timer-critical",
+      )}
+      aria-label={`${safeSeconds} seconds remaining`}
+    >
+      <span>{safeSeconds}</span>
+      <small>s</small>
+    </span>
+  );
+}
+
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -133,6 +157,8 @@ export default function App() {
   const [message, setMessage] = useState("");
   const [scoreOpen, setScoreOpen] = useState(false);
   const [rankingOpen, setRankingOpen] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(ACTION_TIME_SECONDS);
+  const timerActionKeyRef = useRef("");
 
   const lang = createLang;
   const language = LANGUAGES[lang] || LANGUAGES.en;
@@ -252,6 +278,22 @@ export default function App() {
   const canConfirmMode =
     currentContract &&
     (currentContract.id !== "tricks-positive" || deckGame.trumpSuit);
+  const actionDeadline = Number(deckGame.actionDeadline) || 0;
+  const timerPhase =
+    gameStatus === "playing" &&
+    deckGame.deckId &&
+    !deckGame.loading &&
+    !roundOver &&
+    !gameFinished
+      ? !deckGame.modeLocked
+        ? "mode"
+        : mustRemoveCards
+          ? "remove"
+          : currentTurnId && tableCards.length < players.length
+            ? "turn"
+            : ""
+      : "";
+  const timerOwnerId = timerPhase === "turn" ? currentTurnId : chooser.id;
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -273,6 +315,60 @@ export default function App() {
 
     applyOrientation();
   }, [location.pathname, gameStatus]);
+
+  useEffect(() => {
+    if (!timerPhase || actionDeadline || seatId !== timerOwnerId) return;
+
+    patchRoom({
+      deckGame: {
+        ...deckGame,
+        actionDeadline: nextActionDeadline(),
+      },
+    }).catch((error) => setPageError(error.message));
+  }, [actionDeadline, seatId, timerOwnerId, timerPhase]);
+
+  useEffect(() => {
+    if (!timerPhase || !actionDeadline) {
+      setSecondsLeft(ACTION_TIME_SECONDS);
+      return;
+    }
+
+    function updateCountdown() {
+      setSecondsLeft(
+        Math.max(0, Math.ceil((actionDeadline - Date.now()) / 1000)),
+      );
+    }
+
+    updateCountdown();
+    const intervalId = window.setInterval(updateCountdown, 250);
+    return () => window.clearInterval(intervalId);
+  }, [actionDeadline, timerPhase]);
+
+  useEffect(() => {
+    if (
+      !timerPhase ||
+      !actionDeadline ||
+      secondsLeft > 0 ||
+      seatId !== timerOwnerId
+    ) {
+      return;
+    }
+
+    const actionKey = `${timerPhase}:${timerOwnerId}:${actionDeadline}`;
+    if (timerActionKeyRef.current === actionKey) return;
+    timerActionKeyRef.current = actionKey;
+
+    handleTimerExpired(timerPhase).catch((error) => {
+      timerActionKeyRef.current = "";
+      setPageError(error.message);
+    });
+  }, [
+    actionDeadline,
+    secondsLeft,
+    seatId,
+    timerOwnerId,
+    timerPhase,
+  ]);
 
   useEffect(() => {
     if (!phoneChoiceOpen && !rankingOpen) return;
@@ -405,6 +501,7 @@ export default function App() {
           trickNumber: (deckGame.trickNumber || 1) + 1,
           currentTurnId: lastWinnerId,
           lastWinnerId: "",
+          actionDeadline: nextActionDeadline(),
           error: "",
         },
       }).catch((error) => setPageError(error.message));
@@ -436,6 +533,94 @@ export default function App() {
       },
       pendingExtraCards: [],
     };
+  }
+
+  async function autoConfirmMode() {
+    if (seatId !== chooser.id || !deckGame.deckId || deckGame.modeLocked) {
+      return;
+    }
+
+    const availableContracts = contracts.filter(
+      (contract) =>
+        !(usedContracts[chooser.id] || []).includes(contract.id),
+    );
+    const selectedIsAvailable =
+      currentContract &&
+      availableContracts.some((contract) => contract.id === currentContract.id);
+    const contract = selectedIsAvailable
+      ? currentContract
+      : availableContracts[0];
+
+    if (!contract) return;
+
+    const automaticTrump =
+      contract.id === "tricks-positive"
+        ? deckGame.trumpSuit || NO_TRUMP_SUIT
+        : "";
+    const withExtra = addExtraCardsToChooser({
+      ...deckGame,
+      trumpSuit: automaticTrump,
+    });
+
+    await patchRoom({
+      selectedContractId: contract.id,
+      deckGame: {
+        ...withExtra,
+        trumpLocked: contract.id === "tricks-positive",
+        modeLocked: true,
+        currentTurnId: "",
+        actionDeadline: nextActionDeadline(),
+        error: "",
+      },
+    });
+  }
+
+  async function handleTimerExpired(phase) {
+    if (phase === "mode") {
+      await autoConfirmMode();
+      return;
+    }
+
+    if (phase === "remove") {
+      const chooserHand = deckGame.hands?.[chooser.id] || [];
+      const selectedCards = (deckGame.selectedToRemove || [])
+        .map((code) => chooserHand.find((card) => card.code === code))
+        .filter(
+          (card) => card && canRemoveCard(card, currentContract?.id),
+        );
+      const remainingLegalCards = chooserHand.filter(
+        (card) =>
+          canRemoveCard(card, currentContract?.id) &&
+          !selectedCards.some((selected) => selected.code === card.code),
+      );
+      const automaticCodes = [
+        ...selectedCards,
+        ...remainingLegalCards,
+      ]
+        .slice(0, 2)
+        .map((card) => card.code);
+
+      if (automaticCodes.length === 2) {
+        await removeSelectedCards(automaticCodes);
+      }
+      return;
+    }
+
+    if (phase === "turn") {
+      const hand = deckGame.hands?.[currentTurnId] || [];
+      const legalCard = hand.find(
+        (card) =>
+          canPlayCard({
+            hand,
+            card,
+            tableCards,
+            contractId: currentContract?.id,
+            trumpSuit: deckGame.trumpSuit || "",
+          }).ok,
+      );
+
+      if (legalCard) await playCard(legalCard);
+    }
   }
 
   async function createRoom() {
@@ -625,6 +810,7 @@ export default function App() {
           pendingExtraCards: drawData.cards.slice(cardIndex, cardIndex + 2),
           maxTricks: 10,
           taken: createTaken(players),
+          actionDeadline: nextActionDeadline(),
           loading: false,
         },
       });
@@ -679,6 +865,7 @@ export default function App() {
         trumpLocked: currentContract.id === "tricks-positive",
         modeLocked: true,
         currentTurnId: "",
+        actionDeadline: nextActionDeadline(),
         error: "",
       },
     });
@@ -744,11 +931,13 @@ export default function App() {
     });
   }
 
-  async function removeSelectedCards() {
+  async function removeSelectedCards(selectedOverride) {
     if (seatId !== chooser.id) return;
     if (!currentContract) return;
 
-    const selected = deckGame.selectedToRemove || [];
+    const selected = Array.isArray(selectedOverride)
+      ? selectedOverride
+      : deckGame.selectedToRemove || [];
     const chooserHand = deckGame.hands?.[chooser.id] || [];
 
     if (chooserHand.length !== 12) {
@@ -802,6 +991,7 @@ export default function App() {
         removedCards: selectedCards,
         selectedToRemove: [],
         currentTurnId: chooser.id,
+        actionDeadline: nextActionDeadline(),
         error: "",
       },
     });
@@ -860,6 +1050,7 @@ export default function App() {
           hands: nextHands,
           tableCards: nextTableCards,
           currentTurnId: getNextPlayerId(players, seatId),
+          actionDeadline: nextActionDeadline(),
           error: "",
         },
       });
@@ -893,6 +1084,7 @@ export default function App() {
         trickNumber: currentTrickNumber,
         lastWinnerId: isRoundOver ? "" : winnerId,
         roundOver: isRoundOver,
+        actionDeadline: 0,
         error: "",
       },
     });
@@ -1267,6 +1459,11 @@ export default function App() {
                         <p className="text-xs opacity-70">
                           {handLength} {ui.cards}
                         </p>
+                        {active && timerPhase === "turn" && (
+                          <div className="mt-1 flex justify-center">
+                            <TimerBadge seconds={secondsLeft} />
+                          </div>
+                        )}
                       </div>
 
                       <div className="opponent-card-stack flex justify-center">
@@ -1410,6 +1607,11 @@ export default function App() {
                               ? "რეჟიმის არჩევა"
                               : "Choose mode"}
                       </p>
+                      {timerPhase && (
+                        <div className="mt-1 flex justify-end">
+                          <TimerBadge seconds={secondsLeft} />
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1785,11 +1987,16 @@ export default function App() {
                         {ui.chooseMode}
                       </h2>
                     </div>
-                    {currentContract && (
-                      <p className="rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1 text-xs font-black text-amber-100">
-                        {currentContract.name}
-                      </p>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {timerPhase === "mode" && (
+                        <TimerBadge seconds={secondsLeft} />
+                      )}
+                      {currentContract && (
+                        <p className="rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1 text-xs font-black text-amber-100">
+                          {currentContract.name}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   {myHand.length > 0 && (
@@ -1905,6 +2112,9 @@ export default function App() {
                     {ui.choose2} ({selectedRemoveCount}/2)
                   </p>
                 </div>
+                {timerPhase === "remove" && (
+                  <TimerBadge seconds={secondsLeft} />
+                )}
                 <button
                   onClick={removeSelectedCards}
                   disabled={selectedRemoveCount !== 2}
