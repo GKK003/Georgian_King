@@ -156,6 +156,132 @@ function formatChatTime(createdAt) {
   }
 }
 
+function getGameAudioContext(audioContextRef) {
+  if (typeof window === "undefined") return null;
+
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return null;
+
+  if (!audioContextRef.current) {
+    audioContextRef.current = new AudioContextClass();
+  }
+
+  return audioContextRef.current;
+}
+
+function unlockGameAudio(audioContextRef) {
+  const context = getGameAudioContext(audioContextRef);
+  if (!context || context.state !== "suspended") return;
+
+  context.resume().catch(() => {});
+}
+
+function scheduleVictoryTone(
+  context,
+  output,
+  frequency,
+  start,
+  duration,
+  type = "triangle",
+  volume = 0.22,
+) {
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  const attack = Math.min(0.04, duration / 3);
+
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, start);
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(volume, start + attack);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+  oscillator.connect(gain);
+  gain.connect(output);
+  oscillator.start(start);
+  oscillator.stop(start + duration + 0.05);
+
+  return oscillator;
+}
+
+function playVictorySong(audioContextRef) {
+  const context = getGameAudioContext(audioContextRef);
+  if (!context) return null;
+
+  unlockGameAudio(audioContextRef);
+
+  const now = context.currentTime + 0.05;
+  const master = context.createGain();
+  const oscillators = [];
+
+  master.gain.setValueAtTime(0.0001, now);
+  master.gain.exponentialRampToValueAtTime(0.24, now + 0.08);
+  master.gain.exponentialRampToValueAtTime(0.0001, now + 5.05);
+  master.connect(context.destination);
+
+  const melody = [
+    [392, 0, 0.22],
+    [493.88, 0.24, 0.22],
+    [587.33, 0.48, 0.26],
+    [783.99, 0.78, 0.42],
+    [659.25, 1.25, 0.22],
+    [783.99, 1.49, 0.22],
+    [987.77, 1.73, 0.32],
+    [1174.66, 2.1, 0.55],
+    [987.77, 2.78, 0.22],
+    [880, 3.02, 0.22],
+    [783.99, 3.26, 0.3],
+    [1174.66, 3.62, 0.72],
+  ];
+
+  const chords = [
+    [[196, 246.94, 293.66, 392], 0, 0.9],
+    [[261.63, 329.63, 392, 523.25], 1.15, 0.8],
+    [[293.66, 369.99, 440, 587.33], 2.3, 0.75],
+    [[196, 246.94, 293.66, 392, 783.99], 3.45, 1.45],
+  ];
+
+  melody.forEach(([frequency, offset, duration]) => {
+    oscillators.push(
+      scheduleVictoryTone(
+        context,
+        master,
+        frequency,
+        now + offset,
+        duration,
+        "triangle",
+        0.28,
+      ),
+    );
+  });
+
+  chords.forEach(([frequencies, offset, duration]) => {
+    frequencies.forEach((frequency) => {
+      oscillators.push(
+        scheduleVictoryTone(
+          context,
+          master,
+          frequency,
+          now + offset,
+          duration,
+          "sine",
+          0.075,
+        ),
+      );
+    });
+  });
+
+  return () => {
+    oscillators.forEach((oscillator) => {
+      try {
+        oscillator.stop();
+      } catch {
+        // The oscillator may already be stopped by its scheduled end time.
+      }
+    });
+    master.disconnect();
+  };
+}
+
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -181,6 +307,9 @@ export default function App() {
   const [secondsLeft, setSecondsLeft] = useState(ACTION_TIME_SECONDS);
   const timerActionKeyRef = useRef("");
   const chatEndRef = useRef(null);
+  const gameAudioContextRef = useRef(null);
+  const victorySongKeyRef = useRef("");
+  const victorySongStopRef = useRef(null);
 
   const lang = createLang;
   const language = LANGUAGES[lang] || LANGUAGES.en;
@@ -198,6 +327,25 @@ export default function App() {
     });
 
     return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const unlock = () => unlockGameAudio(gameAudioContextRef);
+    const events = ["pointerdown", "touchstart", "keydown"];
+
+    events.forEach((eventName) => {
+      window.addEventListener(eventName, unlock, { passive: true });
+    });
+
+    return () => {
+      events.forEach((eventName) => {
+        window.removeEventListener(eventName, unlock);
+      });
+      victorySongStopRef.current?.();
+      victorySongStopRef.current = null;
+    };
   }, []);
 
   useEffect(() => {
@@ -426,6 +574,24 @@ export default function App() {
   useEffect(() => {
     setRankingOpen(gameFinished);
   }, [gameFinished]);
+
+  useEffect(() => {
+    if (!gameFinished) {
+      victorySongKeyRef.current = "";
+      victorySongStopRef.current?.();
+      victorySongStopRef.current = null;
+      return;
+    }
+
+    if (!rankingOpen) return;
+
+    const victoryKey = `${roomCode}:${history.length}:${rankings[0]?.id || ""}`;
+    if (victorySongKeyRef.current === victoryKey) return;
+
+    victorySongKeyRef.current = victoryKey;
+    victorySongStopRef.current?.();
+    victorySongStopRef.current = playVictorySong(gameAudioContextRef);
+  }, [gameFinished, history.length, rankingOpen, rankings, roomCode]);
 
   useEffect(() => {
     if (!gameFinished || !rankingOpen) return;
