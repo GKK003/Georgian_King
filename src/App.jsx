@@ -419,9 +419,9 @@ export default function App() {
   }, [phoneChoiceOpen, rankingOpen, chatOpen]);
 
   useEffect(() => {
-    if (!chatOpen) return;
+    if (!chatOpen && gameStatus !== "playing") return;
     chatEndRef.current?.scrollIntoView({ block: "end" });
-  }, [chatOpen, chatMessages.length]);
+  }, [chatOpen, chatMessages.length, gameStatus]);
 
   useEffect(() => {
     setRankingOpen(gameFinished);
@@ -1354,7 +1354,7 @@ export default function App() {
 
             <button
               onClick={() => setChatOpen(true)}
-              className="h-10 rounded-xl border border-white/10 px-3 text-sm font-bold hover:bg-white/10"
+              className="room-chat-topbar-button h-10 rounded-xl border border-white/10 px-3 text-sm font-bold hover:bg-white/10"
             >
               {ui.chat}
             </button>
@@ -1506,7 +1506,70 @@ export default function App() {
               </div>
 
               <div className="game-layout-grid grid flex-1 grid-cols-1 gap-3 lg:grid-cols-[240px_1fr_240px]">
-                <aside className="mode-panel order-2 rounded-3xl border border-white/10 bg-slate-950/70 p-4 lg:order-1">
+                <aside className="room-chat-sidebar order-2 rounded-3xl border border-white/10 bg-slate-950/70 p-4 lg:order-1">
+                  <div className="room-chat-sidebar-header">
+                    <div>
+                      <p className="room-chat-kicker">{ui.roomCode}: {roomCode}</p>
+                      <h2 id="room-chat-title">{ui.chat}</h2>
+                    </div>
+                    <span className="room-chat-count">{chatMessages.length}</span>
+                  </div>
+
+                  <div className="room-chat-messages room-chat-sidebar-messages">
+                    {chatMessages.length === 0 ? (
+                      <p className="room-chat-empty">{ui.noMessages}</p>
+                    ) : (
+                      chatMessages.map((chatMessage) => {
+                        const mine =
+                          chatMessage.uid === user?.uid ||
+                          chatMessage.seatId === seatId;
+
+                        return (
+                          <div
+                            key={
+                              chatMessage.id ||
+                              `${chatMessage.createdAt}-${chatMessage.uid}`
+                            }
+                            className={classNames(
+                              "room-chat-message",
+                              mine && "room-chat-message-mine",
+                            )}
+                          >
+                            <div className="room-chat-message-meta">
+                              <span>{chatMessage.name || ui.player}</span>
+                              <time>{formatChatTime(chatMessage.createdAt)}</time>
+                            </div>
+                            <p>{chatMessage.text}</p>
+                          </div>
+                        );
+                      })
+                    )}
+                    <div ref={chatEndRef} />
+                  </div>
+
+                  <form className="room-chat-form room-chat-sidebar-form" onSubmit={sendChat}>
+                    <label className="sr-only" htmlFor="room-chat-sidebar-input">
+                      {ui.message}
+                    </label>
+                    <input
+                      id="room-chat-sidebar-input"
+                      value={chatText}
+                      onChange={(event) => setChatText(event.target.value)}
+                      maxLength={300}
+                      placeholder={ui.typeMessage}
+                      className="room-chat-input"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!chatText.trim() || chatSending}
+                      className="room-chat-send"
+                    >
+                      {ui.send}
+                    </button>
+                  </form>
+
+                  {false && (
+                    <>
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
                     {ui.chooseMode}
                   </p>
@@ -1591,6 +1654,8 @@ export default function App() {
                           ? "ველოდებით ამრჩევს."
                           : "Waiting for chooser."}
                     </p>
+                  )}
+                    </>
                   )}
                 </aside>
 

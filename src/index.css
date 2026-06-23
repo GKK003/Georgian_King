@@ -309,6 +309,50 @@ select {
   font-weight: 800;
 }
 
+.room-chat-sidebar {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.room-chat-sidebar-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 12px;
+}
+
+.room-chat-sidebar-header h2 {
+  margin: 2px 0 0;
+  color: #f8fafc;
+  font-size: 22px;
+  font-weight: 950;
+}
+
+.room-chat-count {
+  display: grid;
+  min-width: 32px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  border-radius: 14px;
+  background: rgba(251, 191, 36, 0.1);
+  color: #fbbf24;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.room-chat-topbar-button {
+  display: inline-flex;
+  align-items: center;
+}
+
+.phone-game-shell .room-chat-topbar-button {
+  display: none;
+}
+
 .room-chat-messages {
   display: flex;
   min-height: 220px;
@@ -318,6 +362,12 @@ select {
   overflow-y: auto;
   padding: 12px 14px;
   overscroll-behavior: contain;
+}
+
+.room-chat-sidebar-messages {
+  min-height: 0;
+  flex: 1;
+  padding: 12px 0;
 }
 
 .room-chat-empty {
@@ -399,6 +449,10 @@ select {
 
 .room-chat-send:disabled {
   opacity: 0.45;
+}
+
+.room-chat-sidebar-form {
+  padding: 12px 0 0;
 }
 
 .final-results-overlay {
@@ -565,8 +619,14 @@ select {
   }
 
   .phone-game-shell .mode-panel,
+  .phone-game-shell .room-chat-sidebar,
   .phone-game-shell .score-panel {
     display: none;
+  }
+
+  .phone-game-shell .room-chat-topbar-button {
+    display: inline-flex;
+    align-items: center;
   }
 
   .phone-game-shell .game-layout-grid {
