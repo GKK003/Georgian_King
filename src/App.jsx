@@ -576,24 +576,6 @@ export default function App() {
   }, [gameFinished]);
 
   useEffect(() => {
-    if (!gameFinished) {
-      victorySongKeyRef.current = "";
-      victorySongStopRef.current?.();
-      victorySongStopRef.current = null;
-      return;
-    }
-
-    if (!rankingOpen) return;
-
-    const victoryKey = `${roomCode}:${history.length}:${rankings[0]?.id || ""}`;
-    if (victorySongKeyRef.current === victoryKey) return;
-
-    victorySongKeyRef.current = victoryKey;
-    victorySongStopRef.current?.();
-    victorySongStopRef.current = playVictorySong(gameAudioContextRef);
-  }, [gameFinished, history.length, rankingOpen, rankings, roomCode]);
-
-  useEffect(() => {
     if (!gameFinished || !rankingOpen) return;
 
     const colors = ["#fbbf24", "#f8fafc", "#ef4444", "#22c55e"];
@@ -669,6 +651,24 @@ export default function App() {
       ),
     [players, totals],
   );
+
+  useEffect(() => {
+    if (!gameFinished) {
+      victorySongKeyRef.current = "";
+      victorySongStopRef.current?.();
+      victorySongStopRef.current = null;
+      return;
+    }
+
+    if (!rankingOpen) return;
+
+    const victoryKey = `${roomCode}:${history.length}:${rankings[0]?.id || ""}`;
+    if (victorySongKeyRef.current === victoryKey) return;
+
+    victorySongKeyRef.current = victoryKey;
+    victorySongStopRef.current?.();
+    victorySongStopRef.current = playVictorySong(gameAudioContextRef);
+  }, [gameFinished, history.length, rankingOpen, rankings, roomCode]);
 
   const chooserProgress = useMemo(() => {
     const result = {};
