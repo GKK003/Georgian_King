@@ -13,6 +13,7 @@ import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { ScreenOrientation } from "@capacitor/screen-orientation";
 import confetti from "canvas-confetti";
 import {
+  arrayUnion,
   doc,
   getDoc,
   onSnapshot,
@@ -54,6 +55,11 @@ function classNames(...classes) {
 
 function makeRoomCode() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
+}
+
+function makeMessageId() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 function createPlayers(count) {
@@ -137,6 +143,19 @@ function TimerBadge({ seconds }) {
   );
 }
 
+function formatChatTime(createdAt) {
+  if (!createdAt) return "";
+
+  try {
+    return new Date(createdAt).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
+
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -156,8 +175,12 @@ export default function App() {
   const [message, setMessage] = useState("");
   const [scoreOpen, setScoreOpen] = useState(false);
   const [rankingOpen, setRankingOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatText, setChatText] = useState("");
+  const [chatSending, setChatSending] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(ACTION_TIME_SECONDS);
   const timerActionKeyRef = useRef("");
+  const chatEndRef = useRef(null);
 
   const lang = createLang;
   const language = LANGUAGES[lang] || LANGUAGES.en;
@@ -243,6 +266,13 @@ export default function App() {
   const usedContracts = room?.usedContracts || createUsedContracts(players);
   const deckGame = room?.deckGame || emptyDeckGame;
   const history = room?.history || [];
+  const chatMessages = useMemo(
+    () =>
+      [...(room?.chatMessages || [])]
+        .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+        .slice(-80),
+    [room?.chatMessages],
+  );
   const currentTurnId = deckGame.currentTurnId || "";
   const lastWinnerId = deckGame.lastWinnerId || "";
   const myHand = deckGame.hands?.[seatId] || [];
@@ -370,7 +400,7 @@ export default function App() {
   ]);
 
   useEffect(() => {
-    if (!phoneChoiceOpen && !rankingOpen) return;
+    if (!phoneChoiceOpen && !rankingOpen && !chatOpen) return;
     if (typeof window === "undefined") return;
 
     const previousBodyOverflow = document.body.style.overflow;
@@ -386,7 +416,12 @@ export default function App() {
       document.body.style.overflow = previousBodyOverflow;
       document.documentElement.style.overflow = previousHtmlOverflow;
     };
-  }, [phoneChoiceOpen, rankingOpen]);
+  }, [phoneChoiceOpen, rankingOpen, chatOpen]);
+
+  useEffect(() => {
+    if (!chatOpen) return;
+    chatEndRef.current?.scrollIntoView({ block: "end" });
+  }, [chatOpen, chatMessages.length]);
 
   useEffect(() => {
     setRankingOpen(gameFinished);
@@ -484,6 +519,33 @@ export default function App() {
       ...data,
       updatedAt: serverTimestamp(),
     });
+  }
+
+  async function sendChat(event) {
+    event?.preventDefault();
+    const text = chatText.trim().slice(0, 300);
+    if (!text || !roomCode || chatSending) return;
+
+    setChatSending(true);
+
+    try {
+      await updateDoc(doc(db, "kingRooms", roomCode), {
+        chatMessages: arrayUnion({
+          id: makeMessageId(),
+          uid: user?.uid || "",
+          seatId,
+          name: me?.name || joinName || user?.displayName || user?.email || "Player",
+          text,
+          createdAt: Date.now(),
+        }),
+        updatedAt: serverTimestamp(),
+      });
+      setChatText("");
+    } catch (error) {
+      setPageError(error.message);
+    } finally {
+      setChatSending(false);
+    }
   }
 
   useEffect(() => {
@@ -601,6 +663,7 @@ export default function App() {
         selectedContractId: "",
         usedContracts: createUsedContracts(playersList),
         history: [],
+        chatMessages: [],
         deckGame: emptyDeckGame,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -1287,6 +1350,13 @@ export default function App() {
               className="h-10 rounded-xl border border-white/10 px-3 text-sm font-bold hover:bg-white/10"
             >
               {ui.copyCode}
+            </button>
+
+            <button
+              onClick={() => setChatOpen(true)}
+              className="h-10 rounded-xl border border-white/10 px-3 text-sm font-bold hover:bg-white/10"
+            >
+              {ui.chat}
             </button>
 
             <button
@@ -2079,6 +2149,83 @@ export default function App() {
               )}
           </>
         )}
+
+        {chatOpen &&
+          createPortal(
+            <div
+              className="room-chat-overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="room-chat-title"
+            >
+              <section className="room-chat-panel">
+                <div className="room-chat-header">
+                  <div>
+                    <p className="room-chat-kicker">{ui.roomCode}: {roomCode}</p>
+                    <h2 id="room-chat-title">{ui.chat}</h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setChatOpen(false)}
+                    className="room-chat-close"
+                    aria-label={ui.close}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="room-chat-messages">
+                  {chatMessages.length === 0 ? (
+                    <p className="room-chat-empty">{ui.noMessages}</p>
+                  ) : (
+                    chatMessages.map((message) => {
+                      const mine =
+                        message.uid === user?.uid || message.seatId === seatId;
+
+                      return (
+                        <div
+                          key={message.id || `${message.createdAt}-${message.uid}`}
+                          className={classNames(
+                            "room-chat-message",
+                            mine && "room-chat-message-mine",
+                          )}
+                        >
+                          <div className="room-chat-message-meta">
+                            <span>{message.name || ui.player}</span>
+                            <time>{formatChatTime(message.createdAt)}</time>
+                          </div>
+                          <p>{message.text}</p>
+                        </div>
+                      );
+                    })
+                  )}
+                  <div ref={chatEndRef} />
+                </div>
+
+                <form className="room-chat-form" onSubmit={sendChat}>
+                  <label className="sr-only" htmlFor="room-chat-input">
+                    {ui.message}
+                  </label>
+                  <input
+                    id="room-chat-input"
+                    value={chatText}
+                    onChange={(event) => setChatText(event.target.value)}
+                    maxLength={300}
+                    placeholder={ui.typeMessage}
+                    className="room-chat-input"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!chatText.trim() || chatSending}
+                    className="room-chat-send"
+                  >
+                    {ui.send}
+                  </button>
+                </form>
+              </section>
+            </div>,
+            document.body,
+          )}
 
         {rankingOpen &&
           gameFinished &&
