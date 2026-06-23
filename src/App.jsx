@@ -27,7 +27,6 @@ import AuthPage from "./AuthPage";
 import RulesPage from "./RulesPage";
 import {
   KING_DECK_CODES,
-  NO_TRUMP_SUIT,
   TRUMP_OPTIONS,
   emptyDeckGame,
   createTaken,
@@ -286,7 +285,7 @@ export default function App() {
     !roundOver &&
     !gameFinished
       ? !deckGame.modeLocked
-        ? "mode"
+        ? ""
         : mustRemoveCards
           ? "remove"
           : currentTurnId && tableCards.length < players.length
@@ -535,52 +534,7 @@ export default function App() {
     };
   }
 
-  async function autoConfirmMode() {
-    if (seatId !== chooser.id || !deckGame.deckId || deckGame.modeLocked) {
-      return;
-    }
-
-    const availableContracts = contracts.filter(
-      (contract) =>
-        !(usedContracts[chooser.id] || []).includes(contract.id),
-    );
-    const selectedIsAvailable =
-      currentContract &&
-      availableContracts.some((contract) => contract.id === currentContract.id);
-    const contract = selectedIsAvailable
-      ? currentContract
-      : availableContracts[0];
-
-    if (!contract) return;
-
-    const automaticTrump =
-      contract.id === "tricks-positive"
-        ? deckGame.trumpSuit || NO_TRUMP_SUIT
-        : "";
-    const withExtra = addExtraCardsToChooser({
-      ...deckGame,
-      trumpSuit: automaticTrump,
-    });
-
-    await patchRoom({
-      selectedContractId: contract.id,
-      deckGame: {
-        ...withExtra,
-        trumpLocked: contract.id === "tricks-positive",
-        modeLocked: true,
-        currentTurnId: "",
-        actionDeadline: nextActionDeadline(),
-        error: "",
-      },
-    });
-  }
-
   async function handleTimerExpired(phase) {
-    if (phase === "mode") {
-      await autoConfirmMode();
-      return;
-    }
-
     if (phase === "remove") {
       const chooserHand = deckGame.hands?.[chooser.id] || [];
       const selectedCards = (deckGame.selectedToRemove || [])
@@ -810,7 +764,7 @@ export default function App() {
           pendingExtraCards: drawData.cards.slice(cardIndex, cardIndex + 2),
           maxTricks: 10,
           taken: createTaken(players),
-          actionDeadline: nextActionDeadline(),
+          actionDeadline: 0,
           loading: false,
         },
       });
@@ -1988,9 +1942,6 @@ export default function App() {
                       </h2>
                     </div>
                     <div className="flex items-center gap-2">
-                      {timerPhase === "mode" && (
-                        <TimerBadge seconds={secondsLeft} />
-                      )}
                       {currentContract && (
                         <p className="rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1 text-xs font-black text-amber-100">
                           {currentContract.name}

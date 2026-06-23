@@ -83,7 +83,7 @@ const RULES = {
       {
         heading: "20-Second Timer",
         paragraphs: [
-          "The chooser has 20 seconds to choose and confirm a mode, followed by 20 seconds to remove 2 legal cards. Every player also has 20 seconds to play a card on their turn. If time expires, the game automatically completes the required action with a valid choice. If Tricks Positive was selected without a confirmed main suit, the automatic choice is Without main suit.",
+          "There is no timer while the chooser selects and confirms a mode. After confirming the mode, the chooser has 20 seconds to remove 2 legal cards. Every player also has 20 seconds to play a card on their turn. If time expires during removal or play, the game automatically completes the required action with a valid choice.",
         ],
       },
       {
@@ -177,7 +177,7 @@ const RULES = {
       {
         heading: "20-წამიანი ტაიმერი",
         paragraphs: [
-          "ამრჩევს რეჟიმის არჩევისა და დადასტურებისთვის აქვს 20 წამი, შემდეგ კი 2 დასაშვები კარტის ამოსაღებად კიდევ 20 წამი. თითოეულ მოთამაშეს კარტის ჩამოსასვლელად ასევე აქვს 20 წამი. დროის ამოწურვისას თამაში საჭირო მოქმედებას ავტომატურად ასრულებს დასაშვები არჩევანით. თუ არჩეულია „კარტის აღება“ და კოზირი დადასტურებული არ არის, ავტომატურად აირჩევა კოზირის გარეშე.",
+          "რეჟიმის არჩევისა და დადასტურების დროს ტაიმერი არ მოქმედებს. რეჟიმის დადასტურების შემდეგ ამრჩევს 2 დასაშვები კარტის ამოსაღებად აქვს 20 წამი. თითოეულ მოთამაშეს კარტის ჩამოსასვლელად ასევე აქვს 20 წამი. ამოღების ან კარტის ჩამოსვლისას დროის ამოწურვის შემთხვევაში თამაში საჭირო მოქმედებას ავტომატურად ასრულებს დასაშვები არჩევანით.",
         ],
       },
       {
